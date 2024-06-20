@@ -6,6 +6,9 @@ from src.base.dicts import *
 from src.utils.utils import noise_label
 
 def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
+    for i,loss in enumerate(training_losses):
+        training_losses[i] = loss.detach().cpu().numpy()
+
     fig, ax1 = plt.subplots()
 
     ax1.set_xlabel('Epoch')
@@ -76,9 +79,10 @@ def plot_traces_fill(noise_variance, values, ylabel='', title='', xlabel='Noise 
 
 
 def weights_histogram(net, title):
-    weight_h1 = net.h1.weight.detach().numpy().flatten()
-    weight_h2 = net.h2.weight.detach().numpy().flatten()
-    weight_out = net.out.weight.detach().numpy().flatten()
+    net_copy = net
+    weight_h1 = net_copy.h1.weight.detach().cpu().numpy().flatten()
+    weight_h2 = net_copy.h2.weight.detach().cpu().numpy().flatten()
+    weight_out = net_copy.out.weight.detach().cpu().numpy().flatten()
 
     ax = plt.figure(figsize=(8,10))
 

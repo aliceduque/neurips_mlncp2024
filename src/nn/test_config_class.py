@@ -17,8 +17,9 @@ class Test_Config:
                  calc_entropy,
                  calc_gaussianity,
                  plot,
-                 test_noises = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor'],
-                 database = 'MNIST',
+                 test_noises,
+                 database,
+                 device,
                  ):
         
         self.calc_acc = calc_acc
@@ -33,6 +34,7 @@ class Test_Config:
         self.plot = plot
         self.database = database
         self.data_file = data_file
+        self.device = device
 
         self.out = self.Out(self)
 
@@ -48,9 +50,9 @@ class Test_Config:
                 self.gaussianity = torch.zeros((t.repetition, t.noise_points, t.noise_types))
            
     
-    def test_loader(self, device):
-        self.test_load = get_test_loader(database=self.database, root=self.data_file,
-                                                            reduced=False, device=device)
+    # def test_loader(self, device):
+    #     self.test_load = get_test_loader(database=self.database, root=self.data_file,
+    #                                                         reduced=False, device=device)
 
 
     def test(self, model, rep, noise_value, noise_type):

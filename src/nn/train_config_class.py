@@ -21,9 +21,10 @@ class Train_Config:
                  num_epochs,
                  optimizer,
                  noise_on_activation,                 
-                 save_train_curve = True,
-                 save_histogram = True,
-                 save_parameters = True
+                 save_train_curve,
+                 save_histogram,
+                 save_parameters,
+                 device
                  ):
         self.train_noise_types = train_noise_types
         self.train_noise_values = train_noise_values
@@ -38,6 +39,7 @@ class Train_Config:
         self.data_file = data_file
         self.optimizer = optimizer
         self.noise_on_activation = noise_on_activation
+        self.device = device
 
 
     def create_train_mat (self):
@@ -53,9 +55,9 @@ class Train_Config:
             train_mat = torch.cat((baseline_row, train_mat), dim=0)
         return train_mat
 
-    def train_loader(self, device):
-        self.train_load, self.validation_load = get_train_loader(database=self.database, root=self.data_file,
-                                                                     reduced=False, device=device)
+    # def train_loader(self, device):
+    #     self.train_load, self.validation_load = get_train_loader(database=self.database, root=self.data_file,
+    #                                                                  reduced=False, device=device)
 
     def define_optimizer(self, model, opt):
         if opt == 'Adagrad' or 'adagrad':
@@ -78,7 +80,9 @@ class Train_Config:
         loss_function = create_loss_function(cross_entropy_loss)
         optimizer = self.define_optimizer(model,self.optimizer)
         fig = train_network(model, self.train_load, self.num_epochs, loss_function, optimizer, self.validation_load, plot=self.save_train_curve)
+
         if self.save_train_curve:
+            print('save_loss_curve')
             cwd = create_folder(root, 'train_curve', cd=False)
             fig.savefig(rf"train_curve/{torch.amax(train_vec):.1f}.png")
             plt.close()
