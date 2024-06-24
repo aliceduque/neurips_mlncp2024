@@ -20,7 +20,7 @@ from src.nn.test_config_class import Test_Config
 
 
 def main():
-
+    print('this is on pycharm')
     database = 'MNIST'
     data_file = rf'C:\\Users\\220429111\\Box\\University\\PhD\\Codes\\Python\\neural_net_noise\\data\\'
     device = 'cpu'
