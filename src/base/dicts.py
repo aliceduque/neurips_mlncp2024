@@ -66,3 +66,7 @@ noise_type_to_vector = {'AddUnc': [1,0,0,0],
                         'MulAll': [0,0,1,1],
                         'AllNoi': [1,1,1,1],
                         'Bas': [0,0,0,0]}
+
+gradients = {'h1.weight': [],
+             'h2.weight': [],
+             'out.weight': []}

@@ -24,6 +24,7 @@ class Train_Config:
                  save_train_curve,
                  save_histogram,
                  save_parameters,
+                 save_gradients,
                  device
                  ):
         self.train_noise_types = train_noise_types
@@ -40,6 +41,7 @@ class Train_Config:
         self.optimizer = optimizer
         self.noise_on_activation = noise_on_activation
         self.device = device
+        self.save_gradients = save_gradients
 
 
     def create_train_mat (self):
@@ -79,21 +81,28 @@ class Train_Config:
         cross_entropy_loss.to(dev)
         loss_function = create_loss_function(cross_entropy_loss)
         optimizer = self.define_optimizer(model,self.optimizer)
-        fig = train_network(model, self.train_load, self.num_epochs, loss_function, optimizer, self.validation_load, plot=self.save_train_curve)
+        fig1, fig2 = train_network(model, self.train_load, self.num_epochs, loss_function, optimizer, 
+                            self.validation_load, plot_curve=self.save_train_curve, plot_gradient=self.save_gradients)
 
         if self.save_train_curve:
-            print('save_loss_curve')
             cwd = create_folder(root, 'train_curve', cd=False)
-            fig.savefig(rf"train_curve/{torch.amax(train_vec):.1f}.png")
+            fig1.savefig(rf"train_curve/{torch.amax(train_vec):.2f}.png")
+            print('saved plot curve')
+            plt.close()
+        if self.save_gradients:
+            cwd = create_folder(root, 'gradients', cd=False)
+            fig2.savefig(rf"gradients/{torch.amax(train_vec):.2f}.png")
+            print('saved gradients')
             plt.close()
         if self.save_histogram:
             cwd = create_folder(root, 'histogram', cd=False)
-            fig = weights_histogram(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.1f}')
-            plt.savefig(rf"histogram/{torch.amax(train_vec):.1f}.png")
+            fig = weights_histogram(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
+            plt.savefig(rf"histogram/{torch.amax(train_vec):.2f}.png")
+            print('saved histogram')
             plt.close()
         if self.save_parameters:
             cwd = create_folder(root, 'parameters', cd=False) 
-            save_model_parameters(model,rf"parameters/{torch.amax(train_vec):.1f}.pth")
+            save_model_parameters(model,rf"parameters/{torch.amax(train_vec):.2f}.pth")
 
     def save_config_to_file(self, file_path):
         current_date = datetime.now()

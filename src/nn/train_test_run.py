@@ -1,12 +1,16 @@
 # Train and test network
 
 import torch
+import numpy as np
 import torch.nn as nn
 from ..data.dataset_ops import get_test_loader, get_train_loader
 from ..base.init import NUM_EPOCHS,LEARNING_RATE,INPUT_SIZE,OUTPUT_SIZE
-from ..graphic.plot_ops import plot_loss_curve
+from ..graphic.plot_ops import plot_loss_curve, plot_gradients
 from ..graphic.simplex_ops import create_simplex_shaded, plot_simplex
 from ..utils.utils import get_actual_output, expand_expected_output
+from ..base.dicts import gradients
+
+
 
 def run_network(net, database, root, num_epochs=NUM_EPOCHS, train=True, test=True, lr=LEARNING_RATE, reduced=False, plot=False):
     dev = next(net.parameters()).device
@@ -24,22 +28,46 @@ def run_network(net, database, root, num_epochs=NUM_EPOCHS, train=True, test=Tru
     return ax
 
 
-def train_network(model, train_loader, num_epochs, loss_function, optimizer, validation_loader, plot=False):
+def train_network(model, train_loader, num_epochs, loss_function,optimizer, 
+                  validation_loader, plot_curve=False, plot_gradient=False):
+    # model.h1.weight.register_hook(save_grad('h1.weight'))
+    # model.h2.weight.register_hook(save_grad('h2.weight'))
+    # model.out.weight.register_hook(save_grad('out.weight'))
+    # print(gradients['out.weight'])
+    gradients = {}
     dev = next(model.parameters()).device
     training_losses = []
     validation_accuracies = []
     num_batches = len(train_loader)
     for epoch in range(num_epochs):
+
         model.train()
         epoch_loss = 0
+        epoch_gradients = {}
         for i, (images, expected_outputs) in enumerate(train_loader):
+
             images, expected_outputs = images.to(dev, non_blocking=True), expected_outputs.to(dev, non_blocking=True)
             outputs = model(images)
             loss = loss_function(outputs, expected_outputs)
             optimizer.zero_grad()
             loss.backward()
+
+            for name, param in model.named_parameters():
+                if 'weight' in name and param.grad is not None:
+                    if name not in epoch_gradients:
+                        epoch_gradients[name] = param.grad.clone().detach()
+                    else:
+                        epoch_gradients[name] += param.grad.clone().detach()
+
+
             optimizer.step()
             epoch_loss += loss
+        for name, grad in epoch_gradients.items():
+            if name not in gradients:
+                gradients[name] = []
+            avg_grad = grad / num_batches
+            gradients[name].append(avg_grad)
+
 
         avg_training_loss = epoch_loss / num_batches
         training_losses.append(avg_training_loss)
@@ -47,13 +75,32 @@ def train_network(model, train_loader, num_epochs, loss_function, optimizer, val
         validation_accuracies.append(validation_accuracy * 100) 
         print('Epoch [{}/{}], Training Loss: {:.4f}, Validation Accuracy: {:.2f}%'.format(
             epoch + 1, num_epochs, avg_training_loss, validation_accuracy * 100))
-   
-    if plot:
+    
+
+
+    if plot_curve:
         fig = plot_loss_curve(num_epochs,training_losses,validation_accuracies)
     else:
        fig = None
 
-    return fig
+    if plot_gradient:
+        fig2 = plot_gradients(gradients, num_epochs)
+    else:
+        fig2= None
+
+    # print(gradients)
+    # print(gradients['out.weight'])
+    return fig, fig2
+
+def save_grad(name):
+    def hook(grad):
+        if name not in gradients:
+            gradients[name] = grad.clone().detach()
+        else:
+            gradients[name] += grad.clone().detach()
+    return hook
+
+
 
 
 def test_network(model, data_loader, simplex=False, epoch_info=""):
@@ -96,3 +143,16 @@ def create_loss_function(loss_function, output_size=OUTPUT_SIZE):
         targets = expand_expected_output(target, output_size)
         return loss_function(outputs, targets)
     return calc_loss
+
+# def save_grad(name):
+#     def hook(grad):
+#         gradients[name].append(grad.clone().cpu().numpy())
+#     return hook
+
+def save_grad(name):
+    def hook(grad):
+        if name not in gradients:
+            gradients[name] = grad.clone().detach()
+        else:
+            gradients[name] += grad.clone().detach()
+    return hook

@@ -5,6 +5,30 @@ import numpy as np
 from src.base.dicts import *
 from src.utils.utils import noise_label
 
+
+def plot_gradients(gradients, num_epochs):
+    fig = plt.figure(figsize=(18,8))
+    
+    for idx, (name, grads) in enumerate(gradients.items()):
+        flat_grad = [item for sublist1 in grads for sublist2 in sublist1 for item in sublist2]
+        bins = np.linspace(min(flat_grad), max(flat_grad), 30) 
+        ax = fig.add_subplot(1, 3, idx + 1, projection='3d')
+        for epoch in range(num_epochs):
+            hist, edges = np.histogram(gradients[name][epoch], bins=bins)
+            # print('epoch ', epoch, edges)
+            x = 0.5 * (edges[1:] + edges[:-1])
+            y = np.ones_like(x) * epoch
+            z = hist
+            width = (max(flat_grad)-min(flat_grad))/25
+            ax.bar(x, z, zs=epoch, zdir='y', alpha=0.8, width=width)
+        ax.set_xlabel('Gradient Value')
+        ax.set_ylabel('Epoch')
+        ax.set_zlabel('Frequency')
+        ax.set_title(rf"Average gradients: {name}")
+    plt.tight_layout()
+    return fig
+
+
 def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
     for i,loss in enumerate(training_losses):
         training_losses[i] = loss.detach().cpu().numpy()
