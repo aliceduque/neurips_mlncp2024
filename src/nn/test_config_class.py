@@ -69,11 +69,12 @@ class Test_Config:
         return test_mat
 
 
-    def plots(self, activation, train_vec, cwd):
+    def plots(self, activation, train_vec, noise_on_activation):
         for att_name, att_value in self.out.__dict__.items():
             if att_value is not None:
                 fig = make_plot(activation, att_name, att_value, train_vec,
-                                self.noise_points, self.noise_range, self.test_noises)
+                                self.noise_points, self.noise_range, self.test_noises,
+                                noise_on_activation)
                 if self.plot=='save':
                     fig.savefig(rf'{att_name}/{torch.amax(train_vec):.1f}.png')
                     plt.close()

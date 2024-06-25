@@ -1,12 +1,11 @@
-import os
-import numpy as np
-import math
-import matplotlib.pyplot as plt
-import torch.nn as nn
-import torch.functional
 from datetime import datetime
-from multiprocessing import freeze_support
-
+import torch.functional
+from src.base.dicts import *
+from src.nn.nn_operations import *
+from src.nn.test_config_class import Test_Config
+from src.nn.train_config_class import Train_Config
+from src.nn.train_test_run import *
+from src.utils.file_ops import *
 from src.utils.utils import *
 from src.utils.file_ops import *
 from src.graphic.plot_ops import weights_histogram
@@ -18,58 +17,56 @@ from src.base.dicts import *
 from src.nn.train_config_class import Train_Config
 from src.nn.test_config_class import Test_Config
 
-
 def main():
 
     database = 'MNIST'
-    data_file = rf'C:\\Users\\220429111\\Box\\University\\PhD\\Codes\\Python\\neural_net_noise\\data\\'
+    test_name = 'adadelta'
+    data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
     device = 'cpu'
-    noise_on_activation ='after'
-    root = "C:\\Users\\220429111\\Box\\University\\PhD\\Codes\\Python\\neural_net_noise\\outcomes\\MNIST\\20240620_GPU_test"
+    noise_on_activation = 'after'
+    current_date = datetime.now()
+    date_string = current_date.strftime("%Y%m%d")
+    root = create_folder(rf"C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/outcomes/{database}",
+                         rf"{date_string}_{test_name}", cd = True)
 
     train = Train_Config(
-                        train_noise_types = ['AddCor'],
-                        train_noise_values = [0.1],
-                        activations = ['relu'],
-                        baseline =True,                    
-                        learning_rate = 'specific',
-                        num_epochs = 10,
-                        optimizer = 'Adagrad',
-                        save_histogram = True,
-                        save_parameters = True,
-                        save_train_curve = True,
-                        save_gradients= False,
-                        database=database,
-                        data_file = data_file,
-                        noise_on_activation = noise_on_activation,
-                        device = device                    
-                        )
-
-                        
+        train_noise_types = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor', 'AllNoi'],
+        train_noise_values = [0.1, 0.5, 1.0, 3.0, 5.0],
+        activations = ['relu', 'sigm', 'relu_bound', 'sigm_shift'],
+        baseline = True,
+        learning_rate = 'specific',
+        num_epochs = 70,
+        optimizer = 'Adadelta',
+        save_histogram = True,
+        save_parameters = True,
+        save_train_curve = True,
+        save_gradients = False,
+        database = database,
+        data_file = data_file,
+        noise_on_activation = noise_on_activation,
+        device = device
+    )
 
     test = Test_Config(
-                        noise_range = [5, 10],
-                        noise_points = 10,
-                        repetition = 1,
-                        test_noises = ['AddUnc','AddCor', 'MulUnc', 'MulCor'],
-                        calc_acc = True,
-                        calc_entropy = True,
-                        calc_gaussianity = True,
-                        calc_snr = True,
-                        plot ='save',
-                        database = database,
-                        data_file = data_file,
-                        device = device                    
-                        )
-
+        noise_range = [0.001, 10],
+        noise_points = 50,
+        repetition = 3,
+        test_noises = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor'],
+        calc_acc = True,
+        calc_entropy = False,
+        calc_gaussianity = False,
+        calc_snr = False,
+        plot = 'save',
+        database = database,
+        data_file = data_file,
+        device = device
+    )
 
     train_mat = train.create_train_mat()
-    # train.train_loader(device)
-    train.train_load, train.validation_load = get_train_loader(database, data_file, device=device) 
+    train.train_load, train.validation_load = get_train_loader(database, data_file, device = device)
 
     test_mat = test.create_test_mat()
-    test.test_load = get_test_loader(database=database, root=data_file, device=device)
-    # test.test_loader(device)
+    test.test_load = get_test_loader(database = database, root = data_file, device = device)
 
 
     learning_rates_regime = train.learning_rate
@@ -95,7 +92,7 @@ def main():
                     for r in range(test.repetition):
                         test.test(model, r, v, m)
             test.save_points(activation, train_vec, cwd)
-            test.plots(activation, train_vec, cwd)
+            test.plots(activation, train_vec, noise_on_activation)
             cwd = up_one_level(cwd)
         cwd = up_one_level(cwd)
 

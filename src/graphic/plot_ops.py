@@ -128,7 +128,7 @@ def weights_histogram(net, title):
     return ax
 
 
-def make_plot(activation, attribute, value, train_vec, noise_points, noise_range, test_noises):
+def make_plot(activation, attribute, value, train_vec, noise_points, noise_range, test_noises, noise_on_activation):
     train_vec = train_vec.cpu().numpy()
     value = value.cpu().numpy()
     noise_vec = np.logspace(np.log10(noise_range[0]), np.log10(noise_range[1]), noise_points)    
@@ -136,7 +136,7 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
     labels = [label_dict[v] for v in test_noises]
     noise_labels = noise_label(train_vec)
     noise_value = np.amax(train_vec)
-    title = (rf'{attribute}: {activation} trained with {noise_labels} = {noise_value:.1f}')
+    title = (rf'{attribute}: {activation} trained with {noise_labels} = {noise_value:.1f} {noise_on_activation} activation')
     fig, ax = plt.subplots()
     mean = np.mean(value, axis=0)
     std = np.std(value, axis=0)

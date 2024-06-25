@@ -9,12 +9,13 @@ index_map = {'AddUnc': 0, 'AddCor': 1, 'MulUnc': 2, 'MulCor': 3}
 
 batch_size = 128
 noise1 = ['Bas', '0.0']
-noise2 = ['AddCor', '1.0']
-tested_with = index_map.get('AddCor')
-activation = 'relu'
+noise2 = ['MulUnc', '1.0']
+tested_with = index_map.get('MulUnc')
+activation = 'sigm'
 
 
-root = rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240619_NORMALISED_noise_before_activation\{activation}"
+# root = rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240619_NORMALISED_noise_before_activation\{activation}"
+root = rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240621_noisy_training_after\{activation}"
 acc_1 = load_variable(rf"{root}\\{noise1[0]}\\accuracy\\{noise1[1]}.pkl")
 acc_2 = load_variable(rf"{root}\\{noise2[0]}\\accuracy\\{noise2[1]}.pkl")
 print(acc_1.shape)
