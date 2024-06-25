@@ -13,12 +13,14 @@ from src.nn.train_test_run import *
 from src.nn.nn_classes import *
 from src.nn.nn_operations import *
 from src.base.dicts import *
-
-from src.nn.train_config_class import Train_Config
+from src.nn.nn_operations import *
 from src.nn.test_config_class import Test_Config
+from src.nn.train_config_class import Train_Config
+from src.nn.train_test_run import *
+from src.utils.file_ops import *
+from src.utils.utils import *
 
 def main():
-
     database = 'MNIST'
     test_name = 'adadelta'
     data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
@@ -68,25 +70,22 @@ def main():
     test_mat = test.create_test_mat()
     test.test_load = get_test_loader(database = database, root = data_file, device = device)
 
-
     learning_rates_regime = train.learning_rate
 
-
     train.save_config_to_file(root)
-
 
     for a, activation in enumerate(train.activations):
         if learning_rates_regime == 'specific':
             train.learning_rate = learning_rates_dict[activation]
-        cwd = create_folder(root, activation, cd=True)
+        cwd = create_folder(root, activation, cd = True)
         for train_vec in train_mat:
             noise_type = noise_label(train_vec)
             cwd = create_folder(cwd, noise_type, cd = True)
             model = create_net(activation, noise_on_activation, train_vec).to(device)
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
             train.train_and_save(model, cwd, train_vec)
-            for m,mat in enumerate(test_mat):
-                for v, test_vec in enumerate(mat): 
+            for m, mat in enumerate(test_mat):
+                for v, test_vec in enumerate(mat):
                     print(test_vec)
                     model = assign_to_model(model, test_vec)
                     for r in range(test.repetition):
@@ -97,13 +96,8 @@ def main():
         cwd = up_one_level(cwd)
 
 
-
 if __name__ == '__main__':
     from multiprocessing import freeze_support
+
     freeze_support()
     main()
-
-
-
-
-
