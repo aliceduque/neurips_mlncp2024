@@ -127,6 +127,31 @@ def weights_histogram(net, title):
 
     return ax
 
+def biases_histogram(net, title):
+    net_copy = net
+    bias_h1 = net_copy.h1.bias.detach().cpu().numpy().flatten()
+    bias_h2 = net_copy.h2.bias.detach().cpu().numpy().flatten()
+    bias_out = net_copy.out.bias.detach().cpu().numpy().flatten()
+
+    ax = plt.figure(figsize=(8,10))
+
+    plt.suptitle(title)
+    plt.subplot(3, 1, 1)
+    plt.hist(bias_h1, bins=20, color='green', alpha=0.7)
+    plt.title('Layer 1 bias Histogram')
+
+    plt.subplot(3, 1, 2)
+    plt.hist(bias_h2, bins=20, color='green', alpha=0.7)
+    plt.title('Layer 2 bias Histogram')
+
+    plt.subplot(3,1, 3)
+    plt.hist(bias_out, bins=20, color='green', alpha=0.7)
+    plt.title('Output Layer bias Histogram')
+
+    plt.tight_layout()
+
+    return ax
+
 
 def make_plot(activation, attribute, value, train_vec, noise_points, noise_range, test_noises, noise_on_activation):
     train_vec = train_vec.cpu().numpy()
