@@ -41,7 +41,7 @@ def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
     ax1.tick_params(axis='y', labelcolor='tab:blue')
 
     ax2 = ax1.twinx()
-    ax2.set_ylabel('Validation Accuracy (%)', color='tab:orange')
+    ax2.set_ylabel('Validation Accuracy (%)', color='tab:orange', fontsize=14)
     ax2.plot(range(1, num_epochs + 1), validation_accuracies, label='Validation Accuracy', color='tab:orange')
     ax2.tick_params(axis='y', labelcolor='tab:orange')
 
