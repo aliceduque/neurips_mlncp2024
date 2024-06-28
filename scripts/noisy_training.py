@@ -22,7 +22,7 @@ from src.utils.utils import *
 
 def main():
     database = 'MNIST'
-    test_name = 'adadelta'
+    test_name = 'sigm_without_initialisation'
     data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
     device = 'cpu'
     noise_on_activation = 'after'
@@ -32,12 +32,12 @@ def main():
                          rf"{date_string}_{test_name}", cd = True)
 
     train = Train_Config(
-        train_noise_types = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor', 'AllNoi'],
-        train_noise_values = [0.1, 0.5, 1.0, 3.0, 5.0],
-        activations = ['relu', 'sigm', 'relu_bound', 'sigm_shift'],
+        train_noise_types = ['AddUnc'],
+        train_noise_values = [1.0, 3.0],
+        activations = ['sigm'],
         baseline = True,
         learning_rate = 'specific',
-        num_epochs = 70,
+        num_epochs = 50,
         optimizer = 'Adadelta',
         save_histogram = True,
         save_parameters = True,
@@ -82,6 +82,10 @@ def main():
             noise_type = noise_label(train_vec)
             cwd = create_folder(cwd, noise_type, cd = True)
             model = create_net(activation, noise_on_activation, train_vec).to(device)
+            print(train_vec)
+            # if not torch.all(torch.eq(train_vec, torch.tensor([0., 0., 0., 0.]))):
+            #     load_model_parameters(model,rf"{root}/{activation}/Bas/parameters/0.00.pth")
+            #     print('loaded baseline parameters')
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
             train.train_and_save(model, cwd, train_vec)
             for m, mat in enumerate(test_mat):

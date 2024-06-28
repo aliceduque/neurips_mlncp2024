@@ -6,7 +6,7 @@ from src.data.dataset_ops import get_train_loader
 from src.nn.train_test_run import create_loss_function, train_network
 from src.utils.file_ops import create_folder, save_model_parameters
 from src.utils.utils import noise_label
-from src.graphic.plot_ops import weights_histogram, biases_histogram
+from src.graphic.plot_ops import weights_histogram, biases_histogram, weights_mean_std
 from datetime import datetime
 
 class Train_Config:
@@ -101,7 +101,9 @@ class Train_Config:
             plt.close()
             fig = biases_histogram(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
             plt.savefig(rf"histogram/biases_{torch.amax(train_vec):.2f}.png")
-            plt.close()            
+            plt.close()
+            fig = weights_mean_std(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
+            plt.savefig(rf"histogram/mean_std_{torch.amax(train_vec):.2f}.png")                      
             print('saved histograms')
             
         if self.save_parameters:
