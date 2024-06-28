@@ -48,7 +48,7 @@ def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
     fig.tight_layout()
     plt.title('Training Loss and Validation Accuracy')
     fig.legend(loc='upper left', bbox_to_anchor=(0.1,0.9))
-
+    plt.grid(True)
     return fig
 
 
@@ -57,9 +57,7 @@ def scatter_traces(noise_variance, values, ylabel='', title='', xlabel='Noise va
 
     colors = ['blue', 'green', 'red', 'orange']
     labels = ['Additive Uncorrelated', 'Additive Correlated', 'Multiplicative Uncorrelated', 'Multiplicative Correlated']
-
     fig,ax = plt.subplots()
-
     values = values.detach().cpu().numpy()
     for k in range(len(values)):
         plt.scatter(noise_variance, values[k], color=colors[k], label=labels[k])
@@ -69,33 +67,29 @@ def scatter_traces(noise_variance, values, ylabel='', title='', xlabel='Noise va
     plt.ylabel(ylabel)
     plt.title(title)
     plt.legend()
-
+    plt.grid(True)
     if ret:
         return fig
     else:
         plt.show()
 
-
 def plot_traces_fill(noise_variance, values, ylabel='', title='', xlabel='Noise variance',
                 ret = False):
-    
+  
     fig,ax = plt.subplots()
     colors = ['blue', 'green', 'red', 'orange']
     labels = ['Additive Uncorrelated', 'Additive Correlated', 'Multiplicative Uncorrelated', 'Multiplicative Correlated']
-
     values = values.detach().cpu().numpy()
-
     ax.xscale('log')
     ax.xlabel(xlabel)
     ax.ylabel(ylabel)
     ax.title(title)
-
     for k in range(len(values)):
         ax.plot(noise_variance, np.mean(values[k], axis=1), color=colors[k], label=labels[k], linewidth = 3)
         ax.fill_between(noise_variance, np.mean(values[k], axis=1) - np.std(values[k], axis=1),
                         np.mean(values[k], axis=1) + np.std(values[k], axis=1), color=colors[k], alpha=0.3)
     ax.legend()
-
+    plt.grid(True)
     if ret:
         return fig
     else:
@@ -197,7 +191,6 @@ def weights_mean_std(model, title):
     plt.title(f'Mean Values and Standard Deviation for {title}')
     plt.legend()
     plt.grid(True)
-    
     return fig
 
 
@@ -222,4 +215,5 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
     ax.set_xlabel('Noise variance')
     ax.set_ylabel(attribute)
     ax.legend()
+    plt.grid(True)
     return fig

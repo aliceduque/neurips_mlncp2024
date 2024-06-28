@@ -15,20 +15,6 @@ create_net_dict = {
     'sigm_shift': (Net_Sigm_shift, 0.01)
 }
 
-learning_rates_dict = { 'relu': 0.005,
-                        'sigm': 0.01,
-                        'relu_ln':0.005,
-                        'relu_ln1': 0.005,
-                        'relu_bound': 0.01,
-                        'relu_bound_symm': 0.01,
-                        'leaky': 0.01,
-                        'erf': 0.01,
-                        'gelu': 0.005,
-                        'tanh': 0.008,
-                        'sigm_shift': 0.01
-                    }
-
-
 clean_text_dict = { 'sigm': 'Sigmoid',
                     'relu': 'ReLU',
                     'leak': 'Leaky ReLU',
@@ -70,3 +56,17 @@ noise_type_to_vector = {'AddUnc': [1,0,0,0],
 gradients = {'h1.weight': [],
              'h2.weight': [],
              'out.weight': []}
+
+
+# learning_rates_dict = { 'relu': 0.005,
+#                         'sigm': 0.01,
+#                         'relu_ln':0.005,
+#                         'relu_ln1': 0.005,
+#                         'relu_bound': 0.01,
+#                         'relu_bound_symm': 0.01,
+#                         'leaky': 0.01,
+#                         'erf': 0.01,
+#                         'gelu': 0.005,
+#                         'tanh': 0.008,
+#                         'sigm_shift': 0.01
+#                     }

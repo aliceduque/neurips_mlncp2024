@@ -118,7 +118,7 @@ class Train_Config:
                 f.write(f"{key}: {value}\n")
             f.write("\n")
             f.write("Learning rates dictionary: \n")
-            for key, value in learning_rates_dict.items():
-                f.write(f"{key}: {value}\n")
+            for key, value in create_net_dict.items():
+                f.write(f"{key}: {value[1]}\n")
 
 
