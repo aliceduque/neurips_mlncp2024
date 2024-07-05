@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 from src.base.dicts import *
 from src.data.dataset_ops import get_train_loader
+from src.nn.nn_operations import discretise_weights
 from src.nn.train_test_run import create_loss_function, train_network
 from src.utils.file_ops import create_folder, save_model_parameters
 from src.utils.utils import noise_label
@@ -25,7 +26,9 @@ class Train_Config:
                  save_histogram,
                  save_parameters,
                  save_gradients,
-                 device
+                 device,
+                 regularisation,
+                 lambda_reg
                  ):
         self.train_noise_types = train_noise_types
         self.train_noise_values = train_noise_values
@@ -42,6 +45,8 @@ class Train_Config:
         self.noise_on_activation = noise_on_activation
         self.device = device
         self.save_gradients = save_gradients
+        self.reg_type = regularisation
+        self.lambda_reg = lambda_reg
 
 
     def create_train_mat (self):
@@ -82,8 +87,10 @@ class Train_Config:
         loss_function = create_loss_function(cross_entropy_loss)
         optimizer = self.define_optimizer(model,self.optimizer)
         fig1, fig2 = train_network(model, self.train_load, self.num_epochs, loss_function, optimizer, 
-                            self.validation_load, plot_curve=self.save_train_curve, plot_gradient=self.save_gradients)
+                            self.validation_load, reg_type=self.reg_type, lambda_reg=self.lambda_reg,
+                            plot_curve=self.save_train_curve, plot_gradient=self.save_gradients)
 
+        # discretise_weights(model)
         if self.save_train_curve:
             cwd = create_folder(root, 'train_curve', cd=False)
             fig1.savefig(rf"train_curve/{torch.amax(train_vec):.2f}.png")

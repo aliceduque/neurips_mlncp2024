@@ -62,3 +62,27 @@ def noise_label (vec):
     #     i = torch.argmax(vec)
     # label = extract_initials(labels[i])
     # return vector_to_noise_type
+
+def discretise_tensor(tensor):
+    rows, cols = tensor.size()
+    discretised_tensor = torch.zeros_like(tensor)
+    
+    for i in range(rows):
+        
+        row = tensor[i]
+        mean = row.mean()
+        row = row-mean
+        std = row.std()
+
+
+        # value_list = torch.tensor([-2*std, -std, mean, std, 2*std], device=tensor.device)
+        value_list = torch.tensor([-1.5*std, mean, 1.5*std], device=tensor.device)        
+        distance = torch.abs(row.unsqueeze(-1) - value_list)
+        min_indices = torch.argmin(distance, dim=-1)
+        discretised_row = value_list[min_indices]
+        discretised_row = discretised_row - mean
+        discretised_tensor[i] = discretised_row
+
+        
+    
+    return discretised_tensor

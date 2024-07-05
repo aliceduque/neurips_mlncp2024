@@ -9,6 +9,9 @@ from ..graphic.plot_ops import plot_loss_curve, plot_gradients
 from ..graphic.simplex_ops import create_simplex_shaded, plot_simplex
 from ..utils.utils import get_actual_output, expand_expected_output
 from ..base.dicts import gradients
+from ..nn.nn_operations import regularisation
+from torchviz import make_dot
+import os
 
 
 
@@ -29,11 +32,13 @@ def run_network(net, database, root, num_epochs=NUM_EPOCHS, train=True, test=Tru
 
 
 def train_network(model, train_loader, num_epochs, loss_function,optimizer, 
-                  validation_loader, plot_curve=False, plot_gradient=False):
+                  validation_loader, reg_type=None, lambda_reg=0,
+                  plot_curve=False, plot_gradient=False):
     # model.h1.weight.register_hook(save_grad('h1.weight'))
     # model.h2.weight.register_hook(save_grad('h2.weight'))
     # model.out.weight.register_hook(save_grad('out.weight'))
     # print(gradients['out.weight'])
+
     gradients = {}
     dev = next(model.parameters()).device
     training_losses = []
@@ -43,39 +48,52 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
 
         model.train()
         epoch_loss = 0
+        reg_epoch_loss = 0
         epoch_gradients = {}
         for i, (images, expected_outputs) in enumerate(train_loader):
 
             images, expected_outputs = images.to(dev, non_blocking=True), expected_outputs.to(dev, non_blocking=True)
             outputs = model(images)
             loss = loss_function(outputs, expected_outputs)
+            reg_factor = regularisation(model, reg_type)
+            
+                  
+            # print(reg_factor) 
+            total_loss = loss + lambda_reg * reg_factor
+            # print('loss = ', loss)
             optimizer.zero_grad()
-            loss.backward()
-
-            for name, param in model.named_parameters():
-                if 'weight' in name and param.grad is not None:
-                    if name not in epoch_gradients:
-                        epoch_gradients[name] = param.grad.clone().detach()
-                    else:
-                        epoch_gradients[name] += param.grad.clone().detach()
+            total_loss.backward(retain_graph=True)
+            
+            # for name, param in model.named_parameters():
+            #     if 'weight' in name and param.grad is not None:
+            #         if name not in epoch_gradients:
+            #             epoch_gradients[name] = param.grad.clone().detach()
+            #         else:
+            #             epoch_gradients[name] += param.grad.clone().detach()
 
 
             optimizer.step()
-            epoch_loss += loss
-        for name, grad in epoch_gradients.items():
-            if name not in gradients:
-                gradients[name] = []
-            avg_grad = grad / num_batches
-            gradients[name].append(avg_grad)
+            reg_epoch_loss += lambda_reg * reg_factor
+            epoch_loss += total_loss
+        # for name, grad in epoch_gradients.items():
+        #     if name not in gradients:
+        #         gradients[name] = []
+        #     avg_grad = grad / num_batches
+        #     gradients[name].append(avg_grad)
 
-
+        avg_reg_loss = reg_epoch_loss / num_batches
         avg_training_loss = epoch_loss / num_batches
         training_losses.append(avg_training_loss)
         _, validation_accuracy, _ = test_network(model, validation_loader)
         validation_accuracies.append(validation_accuracy * 100) 
-        print('Epoch [{}/{}], Training Loss: {:.4f}, Validation Accuracy: {:.2f}%'.format(
-            epoch + 1, num_epochs, avg_training_loss, validation_accuracy * 100))
-    
+        print('Epoch [{}/{}], Training Loss: {:.4f} (of which reg = {:.4f}), Validation Accuracy: {:.2f}%'.format(
+            epoch + 1, num_epochs, avg_training_loss, avg_reg_loss, validation_accuracy * 100))
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                if 'weight' in name:
+                    l2_norm = torch.norm(param).item()
+                    print(f'Epoch [{epoch+1}/100], Layer: {name}, L2 Norm: {l2_norm:.4f}')
+
 
 
     if plot_curve:
