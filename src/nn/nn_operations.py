@@ -90,7 +90,9 @@ def regularisation(model, type):
     elif type == 'custom_std':
         std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
         std_out = torch.sum(torch.std(model.out.weight,dim=1))
-        reg_factor = std_h2 + std_out
+        sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
+        sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
+        reg_factor = 5*std_out + sum_out + 0.1*std_h2 + 0.1*sum_h2
 
     elif type == 'l1' or type == 'L1':
         reg_factor = 0.0
