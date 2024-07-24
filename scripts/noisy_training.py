@@ -11,7 +11,7 @@ from src.base.dicts import create_net_dict
 
 
 def main():
-    test_name = 'sigm_sum_only_h2'
+    test_name = 'sigm_reg_custom_std_out'
     database = 'MNIST'
     device = 'cpu'
     noise_on_activation = 'after'
@@ -29,8 +29,8 @@ def main():
         learning_rate = 'specific',
         num_epochs = 70,
         optimizer = 'sgd',
-        regularisation =None,
-        lambda_reg = 1e-2,
+        regularisation ='custom_std',
+        lambda_reg = 3e-1,
         save_histogram = True,
         save_parameters = True,
         save_train_curve = True,
@@ -42,8 +42,8 @@ def main():
     )
 
     test = Test_Config(
-        noise_range = [0.001, 10],
-        noise_points = 50,
+        noise_range = [0.001, 1],
+        noise_points = 30,
         repetition = 3,
         test_noises = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor'],
         calc_acc = True,

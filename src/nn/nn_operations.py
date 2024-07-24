@@ -116,7 +116,13 @@ def regularisation(model, type):
         std_out = torch.sum(torch.std(model.out.weight,dim=1))
         # bias_out = torch.sum((1/(model.out.bias**4 + 1e-15)))
         reg_factor = sum_h2 + std_h2 + std_out + sum_out # + bias_out
-        
+    
+    elif type == 'small_activations':
+        reg_factor=0.0
+        for name, param in model.named_parameters():
+            if 'weight' in name and 'out' not in name:
+                reg_factor += torch.sum(torch.clamp(param, min=0))
+    
     elif type == None:
         reg_factor = 0    
         
