@@ -11,7 +11,7 @@ from src.base.dicts import create_net_dict
 
 
 def main():
-    test_name = 'sigm_reg_custom_std_test2'
+    test_name = 'sigm_reg_custom_std_test'
     database = 'MNIST'
     device = 'cpu'
     noise_on_activation = 'after'
@@ -26,11 +26,11 @@ def main():
         train_noise_values = [0.0],
         activations = ['sigm'],
         baseline = False,
-        learning_rate = 0.07,
+        learning_rate = 0.09,
         num_epochs = 100,
         optimizer = 'adam',
         regularisation ='custom_std',
-        lambda_reg = 5e-2,
+        lambda_reg = 8.5e-3,
         save_histogram = True,
         save_parameters = True,
         save_train_curve = True,

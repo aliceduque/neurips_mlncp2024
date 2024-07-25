@@ -92,7 +92,20 @@ def regularisation(model, type):
         std_out = torch.sum(torch.std(model.out.weight,dim=1))
         sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
         sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
-        reg_factor = 5*std_out + sum_out + 0.1*std_h2 + 0.1*sum_h2
+        reg_factor = 1.2*std_h2 + 0.1*sum_h2 + 27*std_out + 0.3*sum_out
+        
+    elif type == 'custom_std_row':
+        out = model.out.weight
+        row_diff = torch.zeros_like(out)
+        for i in range(len(out)):
+            if i == 0:
+                row_diff[0] = out[0] - out[len(out)-1]
+            else:
+                row_diff[i] = out[i] - out[i-1]
+        # std_out = torch.sum(torch.std(model.out.weight,dim=0))
+        # std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
+        row_diff_std = torch.std(row_diff, dim=1)
+        reg_factor = row_diff_std.sum()
 
     elif type == 'l1' or type == 'L1':
         reg_factor = 0.0
