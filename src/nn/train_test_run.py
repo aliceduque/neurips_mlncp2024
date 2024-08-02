@@ -85,9 +85,9 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
         avg_training_loss = epoch_loss / num_batches
         training_losses.append(avg_training_loss)
         _, validation_accuracy, _ = test_network(model, validation_loader)
-        validation_accuracies.append(validation_accuracy * 100) 
+        validation_accuracies.append(validation_accuracy) 
         print('Epoch [{}/{}], Training Loss: {:.4f} (of which reg = {:.4f}), Validation Accuracy: {:.2f}%'.format(
-            epoch + 1, num_epochs, avg_training_loss, avg_reg_loss, validation_accuracy * 100))
+            epoch + 1, num_epochs, avg_training_loss, avg_reg_loss, validation_accuracy))
         with torch.no_grad():
             for name, param in model.named_parameters():
                 if 'weight' in name:
@@ -151,7 +151,7 @@ def test_network(model, data_loader, simplex=False, epoch_info=""):
         # if simplex:
         #   plt.show()
         print(float(correct)/total)
-    return batch, float(correct)/total, ax
+    return batch, 100*float(correct)/total, ax
 
 
 
