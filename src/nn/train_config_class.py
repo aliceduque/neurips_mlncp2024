@@ -109,8 +109,9 @@ class Train_Config:
             fig = biases_histogram(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
             plt.savefig(rf"histogram/biases_{torch.amax(train_vec):.2f}.png")
             plt.close()
-            fig = weights_mean_std(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
-            plt.savefig(rf"histogram/mean_std_{torch.amax(train_vec):.2f}.png")                      
+            fig_row, fig_col = weights_mean_std(model,f'Network trained with {noise_label(train_vec)} = {torch.amax(train_vec):.2f}')
+            fig_row.savefig(rf"histogram/rows_{torch.amax(train_vec):.2f}.png")  
+            fig_col.savefig(rf"histogram/cols_{torch.amax(train_vec):.2f}.png")                     
             print('saved histograms')
             
         if self.save_parameters:

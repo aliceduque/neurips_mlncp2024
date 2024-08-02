@@ -161,8 +161,10 @@ def weights_mean_std(model, title):
     weights_tensors = get_weight_tensors(model)
     num_layers = len(weights_tensors)
     
-    layer_means = []
-    layer_std_devs = []
+    layer_row_means = []
+    layer_row_std_devs = []
+    layer_col_means = []
+    layer_col_std_devs = []
 
     for tensor in weights_tensors:
         row_means = tensor.mean(dim=1).numpy()
@@ -172,26 +174,67 @@ def weights_mean_std(model, title):
         sorted_means = row_means[sorted_indices]
         sorted_std_devs = row_std_devs[sorted_indices]
         
-        layer_means.append(sorted_means)
-        layer_std_devs.append(sorted_std_devs)
+        layer_row_means.append(sorted_means)
+        layer_row_std_devs.append(sorted_std_devs)
+        
+    for tensor in weights_tensors:
+        col_means = tensor.mean(dim=0).numpy()
+        col_variances = tensor.var(dim=0).numpy()
+        col_std_devs = np.sqrt(col_variances)
+        sorted_indices = col_means.argsort()
+        sorted_means = col_means[sorted_indices]
+        sorted_std_devs = col_std_devs[sorted_indices]
+        
+        layer_col_means.append(sorted_means)
+        layer_col_std_devs.append(sorted_std_devs)    
 
-    fig = plt.figure(figsize=(12, 8))
+    fig_row = plt.figure(figsize=(12, 8))
     
     # Plot each layer's mean and std dev with different colors
     colors = plt.cm.rainbow(np.linspace(0, 1, num_layers))  # Generate colors
     for i in range(num_layers):
-        plt.plot(layer_means[i], color=colors[i], label=f'Layer {i+1} Mean', linewidth=3)
-        plt.fill_between(range(len(layer_means[i])),
-                        layer_means[i] - layer_std_devs[i],
-                        layer_means[i] + layer_std_devs[i],
+        plt.plot(layer_row_means[i], color=colors[i], label=f'Layer {i+1} Mean', linewidth=3)
+        plt.fill_between(range(len(layer_row_means[i])),
+                        layer_row_means[i] - layer_row_std_devs[i],
+                        layer_row_means[i] + layer_row_std_devs[i],
                         color=colors[i], alpha=0.2)
 
     plt.xlabel('Row #')
     plt.ylabel('Values')
-    plt.title(f'Mean Values and Standard Deviation for {title}')
+    plt.title(f'Mean Values and Standard Deviation of ROWS for {title}')
     plt.legend()
     plt.grid(True)
-    return fig
+    
+    
+    fig_col = plt.figure(figsize=(16, 16))
+    
+    ax1 = fig_col.add_subplot(211)  # Top subplot
+    ax2 = fig_col.add_subplot(212)  # Bottom subplot
+    
+    # Generate colors
+    colors = plt.cm.rainbow(np.linspace(0, 1, num_layers))
+
+    # Plot the data
+    for i in range(num_layers):
+        if i == 0:
+            ax1.plot(layer_col_means[i], color=colors[i], label=f'Column {i+1} Mean', linewidth=3)
+            ax1.fill_between(range(len(layer_col_means[i])),
+                            layer_col_means[i] - layer_col_std_devs[i],
+                            layer_col_means[i] + layer_col_std_devs[i],
+                            color=colors[i], alpha=0.2)
+            ax1.grid(True)
+            ax1.legend()
+        else:
+            ax2.plot(layer_col_means[i], color=colors[i], label=f'Column {i+1} Mean', linewidth=3)
+            ax2.fill_between(range(len(layer_col_means[i])),
+                            layer_col_means[i] - layer_col_std_devs[i],
+                            layer_col_means[i] + layer_col_std_devs[i],
+                            color=colors[i], alpha=0.2)
+            ax2.grid(True)
+            ax2.legend()
+    
+    plt.tight_layout()
+    return fig_row, fig_col
 
 
 def make_plot(activation, attribute, value, train_vec, noise_points, noise_range, test_noises, noise_on_activation):
