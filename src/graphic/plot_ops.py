@@ -150,90 +150,79 @@ def weights_mean_std(model, title):
     
     def get_weight_tensors(model):
         weights_tensors = []
-        
-        # Iterate over all parameters in the model
+        bias_tensors = []
+
         for param in model.parameters():
             if param.requires_grad and len(param.shape) >= 2:
-                weights_tensors.append(param.data.clone())  # Clone to detach from computation graph
+                weights_tensors.append(param.data.clone())
+            elif param.requires_grad and len(param.shape) == 1:
+                bias_tensors.append(param.data.clone())
         
-        return weights_tensors
+        return weights_tensors, bias_tensors
     
-    weights_tensors = get_weight_tensors(model)
-    num_layers = len(weights_tensors)
-    
-    layer_row_means = []
-    layer_row_std_devs = []
-    layer_col_means = []
-    layer_col_std_devs = []
-
-    for tensor in weights_tensors:
-        row_means = tensor.mean(dim=1).numpy()
-        row_variances = tensor.var(dim=1).numpy()
-        row_std_devs = np.sqrt(row_variances)
-        sorted_indices = row_means.argsort()
-        sorted_means = row_means[sorted_indices]
-        sorted_std_devs = row_std_devs[sorted_indices]
+    def extract_mean_std(weights_tensors, row_or_col, bias_tensors):
+        if row_or_col == 'row':
+            dim = 1
+        elif row_or_col == 'col':
+            dim = 0
         
-        layer_row_means.append(sorted_means)
-        layer_row_std_devs.append(sorted_std_devs)
+        layer_means = []
+        layer_std_devs = []
+        bias = []
         
-    for tensor in weights_tensors:
-        col_means = tensor.mean(dim=0).numpy()
-        col_variances = tensor.var(dim=0).numpy()
-        col_std_devs = np.sqrt(col_variances)
-        sorted_indices = col_means.argsort()
-        sorted_means = col_means[sorted_indices]
-        sorted_std_devs = col_std_devs[sorted_indices]
+        for tensor, bias_tensor in zip(weights_tensors, bias_tensors):
+            means = tensor.mean(dim=dim).numpy()
+            variances = tensor.var(dim=dim).numpy()
+            std_devs = np.sqrt(variances)
+            sorted_indices = means.argsort()
+            print(len(sorted_indices))
+            sorted_means = means[sorted_indices]
+            sorted_std_devs = std_devs[sorted_indices]
+            
+            layer_means.append(sorted_means)
+            layer_std_devs.append(sorted_std_devs)
+            if row_or_col == 'row':
+                sorted_bias = bias_tensor[sorted_indices]
+                bias.append(sorted_bias)  
+        return layer_means, layer_std_devs, bias    
         
-        layer_col_means.append(sorted_means)
-        layer_col_std_devs.append(sorted_std_devs)    
+         
+    def plot_hist_rows_columns(layer_means, layer_std_devs, row_or_col, title, bias = None):
+        
+        num_layers = len(layer_means)
+        fig, axes = plt.subplots(num_layers, 1, figsize=(12, 12), sharex=False)
+        colors = plt.cm.brg(np.linspace(0, 1, num_layers))
 
-    fig_row = plt.figure(figsize=(12, 8))
-    
-    # Plot each layer's mean and std dev with different colors
-    colors = plt.cm.rainbow(np.linspace(0, 1, num_layers))  # Generate colors
-    for i in range(num_layers):
-        plt.plot(layer_row_means[i], color=colors[i], label=f'Layer {i+1} Mean', linewidth=3)
-        plt.fill_between(range(len(layer_row_means[i])),
-                        layer_row_means[i] - layer_row_std_devs[i],
-                        layer_row_means[i] + layer_row_std_devs[i],
-                        color=colors[i], alpha=0.2)
-
-    plt.xlabel('Row #')
-    plt.ylabel('Values')
-    plt.title(f'Mean Values and Standard Deviation of ROWS for {title}')
-    plt.legend()
-    plt.grid(True)
-    
-    
-    fig_col = plt.figure(figsize=(16, 16))
-    
-    ax1 = fig_col.add_subplot(211)  # Top subplot
-    ax2 = fig_col.add_subplot(212)  # Bottom subplot
-    
-    # Generate colors
-    colors = plt.cm.rainbow(np.linspace(0, 1, num_layers))
-
-    # Plot the data
-    for i in range(num_layers):
-        if i == 0:
-            ax1.plot(layer_col_means[i], color=colors[i], label=f'Column {i+1} Mean', linewidth=3)
-            ax1.fill_between(range(len(layer_col_means[i])),
-                            layer_col_means[i] - layer_col_std_devs[i],
-                            layer_col_means[i] + layer_col_std_devs[i],
+        for i in range(num_layers):
+            ax = axes[i]
+            x_values = range(len(layer_means[i]))
+            print(x_values)
+            ax.plot(x_values, layer_means[i], color=colors[i], label=f'Layer {i+1} Mean', linewidth=3)
+            ax.fill_between(range(len(layer_means[i])),
+                            layer_means[i] - 2*layer_std_devs[i],
+                            layer_means[i] + 2*layer_std_devs[i],
                             color=colors[i], alpha=0.2)
-            ax1.grid(True)
-            ax1.legend()
-        else:
-            ax2.plot(layer_col_means[i], color=colors[i], label=f'Column {i+1} Mean', linewidth=3)
-            ax2.fill_between(range(len(layer_col_means[i])),
-                            layer_col_means[i] - layer_col_std_devs[i],
-                            layer_col_means[i] + layer_col_std_devs[i],
-                            color=colors[i], alpha=0.2)
-            ax2.grid(True)
-            ax2.legend()
+            if bias is not None:
+                ax.bar(x_values, bias[i], color='gray', alpha=0.4, label=f'layer {i+1} Bias')
+            ax.set_ylabel('Values')
+            ax.legend()
+            ax.grid(True)
+            ax.set_title(f'Layer {i+1}')
+
+        axes[-1].set_xlabel(f'{row_or_col} #')
+        fig.suptitle(f'Mean Values and Standard Deviation of {row_or_col}s for {title}', fontsize=16)
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        return fig
     
-    plt.tight_layout()
+    
+    weights_tensors, bias_tensors = get_weight_tensors(model)
+    
+    row_means, row_std_devs, bias = extract_mean_std(weights_tensors, 'row', bias_tensors = bias_tensors)
+    col_means, col_std_devs, _ = extract_mean_std(weights_tensors, 'col', bias_tensors = bias_tensors)
+    
+    fig_row = plot_hist_rows_columns(row_means, row_std_devs, 'row', title, bias = bias)
+    fig_col = plot_hist_rows_columns(col_means, col_std_devs, 'column', title)
+   
     return fig_row, fig_col
 
 
@@ -260,3 +249,7 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
     ax.legend()
     plt.grid(True)
     return fig
+
+
+
+
