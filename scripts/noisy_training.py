@@ -11,7 +11,7 @@ from src.base.dicts import create_net_dict
 
 
 def main():
-    test_name = 'sigm_reg_custom_std_test'
+    test_name = 'test_with_none'
     database = 'MNIST'
     device = 'cpu'
     noise_on_activation = 'after'
@@ -25,12 +25,13 @@ def main():
         train_noise_types = ['AddUnc'],
         train_noise_values = [0.0],
         activations = ['sigm'],
-        baseline = False,
-        learning_rate = 0.09,
-        num_epochs = 100,
+        baseline = True,
+        learning_rate ='specific',
+        num_epochs = 50,
         optimizer = 'adam',
-        regularisation ='custom_std',
-        lambda_reg = 8.5e-3,
+        regularisation = 'h2_saturation_out_l2',
+        lambda_reg = 1e-2,
+        reg_config = [0.5, 0.01, 1], # Saturation of h2, L2 of h2, L2 out
         save_histogram = True,
         save_parameters = True,
         save_train_curve = True,
@@ -38,7 +39,8 @@ def main():
         database = database,
         data_file = data_file,
         noise_on_activation = noise_on_activation,
-        device = device
+        device = device,
+
     )
 
     test = Test_Config(
@@ -85,7 +87,7 @@ def main():
                 if not torch.all(torch.eq(train_vec, torch.tensor([0., 0., 0., 0.]))):
                     load_model_parameters(model,rf"{root}/{activation}/Bas/parameters/0.00.pth")
                 else:
-                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240628_baseline_initialisation\{activation}\Bas\parameters\0.00.pth")    
+                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240805_300_neurons\{activation}\Bas\parameters\0.00.pth")    
                 print('loaded baseline parameters')
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
             train.train_and_save(model, cwd, train_vec)

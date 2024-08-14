@@ -2,8 +2,7 @@
 import torch
 import matplotlib.pyplot as plt
 from src.base.dicts import *
-from src.data.dataset_ops import get_train_loader
-from src.nn.nn_operations import discretise_weights
+from src.base.init import HIDDEN_NEURONS, BATCH_SIZE
 from src.nn.train_test_run import create_loss_function, train_network
 from src.utils.file_ops import create_folder, save_model_parameters
 from src.utils.utils import noise_label
@@ -28,7 +27,8 @@ class Train_Config:
                  save_gradients,
                  device,
                  regularisation,
-                 lambda_reg
+                 lambda_reg,
+                 reg_config
                  ):
         self.train_noise_types = train_noise_types
         self.train_noise_values = train_noise_values
@@ -47,6 +47,7 @@ class Train_Config:
         self.save_gradients = save_gradients
         self.reg_type = regularisation
         self.lambda_reg = lambda_reg
+        self.reg_config = reg_config
 
 
     def create_train_mat (self):
@@ -86,9 +87,11 @@ class Train_Config:
         cross_entropy_loss.to(dev)
         loss_function = create_loss_function(cross_entropy_loss)
         optimizer = self.define_optimizer(model,self.optimizer)
+
         fig1, fig2 = train_network(model, self.train_load, self.num_epochs, loss_function, optimizer, 
                             self.validation_load, reg_type=self.reg_type, lambda_reg=self.lambda_reg,
-                            plot_curve=self.save_train_curve, plot_gradient=self.save_gradients)
+                            reg_config = self.reg_config, plot_curve=self.save_train_curve,
+                            plot_gradient=self.save_gradients)
 
         # discretise_weights(model)
         if self.save_train_curve:
@@ -122,11 +125,14 @@ class Train_Config:
         current_date = datetime.now()
         date_string = current_date.strftime("%Y%m%d")
         with open(rf"{file_path}/{date_string}_config_file.txt", 'w') as f:
+            f.write(f"HIDDEN NEURONS: {HIDDEN_NEURONS} \n")
+            f.write(f"BATCH SIZE: {BATCH_SIZE} \n \n")
             for key, value in self.__dict__.items():
                 f.write(f"{key}: {value}\n")
             f.write("\n")
             f.write("Learning rates dictionary: \n")
             for key, value in create_net_dict.items():
                 f.write(f"{key}: {value[1]}\n")
+
 
 

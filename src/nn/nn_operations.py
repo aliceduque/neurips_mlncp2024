@@ -68,18 +68,48 @@ def reg_zero_std(model):
     total_sum = sum_h2 + sum_out
     # total_sum = sum_h2
 
-    # for name, param in model.named_parameters():
-    #     # Check if the parameter is a weight matrix and not a bias vector
-    #     if 'weight' in name:
-    #         if 'h1' in name:
-    #             continue            
-    #         row_sums = torch.sum(param, dim=1)  # Sum elements in each row
-    #         abs_row_sums = torch.abs(row_sums)  # Take the absolute value of each row sum
-    #         total_sum += torch.sum(abs_row_sums).item()  # Sum these absolute values and add to total_sum
     
     return total_sum
 
-def regularisation(model, type):
+class ActivationHook:
+    def __init__(self, layer):
+        self.pre_activations = None
+        self.hook = layer.register_forward_hook(self.hook_fn)
+
+    def hook_fn(self, module, input, output):
+        self.pre_activations = output
+
+    def close(self):
+        self.hook.remove()
+
+# def add_hook(layer):
+#     hook = ActivationHook(layer)
+#     hooks.append(hook)
+#     print(hook.pre_activations)
+
+def compute_penalty(hooks):
+    total_penalty = 0.0
+    for hook in hooks:
+        if hook.pre_activations is not None:
+            total_penalty += regularization_term(hook.pre_activations, -4, 4)
+            
+    return total_penalty
+
+def regularization_term(pre_activations, lower_bound, upper_bound):
+    def sigmoid_derivative(x):
+        sigmoid = 1 / (1 + torch.exp(-x))
+        return sigmoid * (1 - sigmoid)
+    # lower_penalty = torch.nn.functional.relu(pre_activations - lower_bound)
+    # upper_penalty = torch.nn.functional.relu(upper_bound - pre_activations)
+    # penalty = lower_penalty * upper_penalty
+    penalty = sigmoid_derivative(pre_activations).pow(2)
+    # print('act: ', pre_activations[0][0])
+    # print('derivative: ', sigmoid_derivative(pre_activations[0][0]))
+    # print('penalty: ',pre_activations[0][0] * sigmoid_derivative(pre_activations[0][0]))
+    
+    return penalty.abs().sum()
+
+def regularisation(model, type, hook=None, reg_config=[0,0,0]):
     total_sum = 0.0
 
     if type == 'custom_sum':
@@ -87,12 +117,32 @@ def regularisation(model, type):
         sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
         reg_factor = sum_h2 + sum_out
         
+       
     elif type == 'custom_std':
         std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
         std_out = torch.sum(torch.std(model.out.weight,dim=1))
         sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
         sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
         reg_factor = 1.2*std_h2 + 0.1*sum_h2 + 27*std_out + 0.3*sum_out
+
+    elif type == 'towards_saturation':
+        hooks = []
+        hooks.append(hook)        
+        reg_factor = compute_penalty(hooks)
+        
+    elif type =='h2_saturation_out_l2':
+        l2_factor_out = model.out.weight.pow(2).sum()
+        l2_factor_h2 = model.h2.weight.pow(2).sum()
+        hooks = []
+        hooks.append(hook)        
+        reg_factor = reg_config[0]*compute_penalty(hooks) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out
+        
+    elif type =='h2_saturation_out_l1':
+        l1_factor = model.out.weight.abs().sum()
+        hooks = []
+        hooks.append(hook)        
+        reg_factor = compute_penalty(hooks) + l1_factor
+        
         
     elif type == 'custom_std_row':
         out = model.out.weight

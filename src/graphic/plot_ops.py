@@ -190,7 +190,7 @@ def weights_mean_std(model, title):
     def plot_hist_rows_columns(layer_means, layer_std_devs, row_or_col, title, bias = None):
         
         num_layers = len(layer_means)
-        fig, axes = plt.subplots(num_layers, 1, figsize=(12, 12), sharex=False)
+        fig, axes = plt.subplots(num_layers, 1, figsize=(12, 16), sharex=False)
         colors = plt.cm.brg(np.linspace(0, 1, num_layers))
 
         for i in range(num_layers):

@@ -4,18 +4,18 @@ import torch
 import numpy as np
 import torch.nn as nn
 from ..data.dataset_ops import get_test_loader, get_train_loader
-from ..base.init import NUM_EPOCHS,LEARNING_RATE,INPUT_SIZE,OUTPUT_SIZE
+from ..base.init import INPUT_SIZE,OUTPUT_SIZE
 from ..graphic.plot_ops import plot_loss_curve, plot_gradients
 from ..graphic.simplex_ops import create_simplex_shaded, plot_simplex
 from ..utils.utils import get_actual_output, expand_expected_output
 from ..base.dicts import gradients
-from ..nn.nn_operations import regularisation
+from ..nn.nn_operations import regularisation, ActivationHook
 from torchviz import make_dot
 import os
 
 
 
-def run_network(net, database, root, num_epochs=NUM_EPOCHS, train=True, test=True, lr=LEARNING_RATE, reduced=False, plot=False):
+def run_network(net, database, root, num_epochs, lr, train=True, test=True, reduced=False, plot=False):
     dev = next(net.parameters()).device
     if train:
       train_loader, validation_loader = get_train_loader(database=database, root=root, reduced=reduced, device=dev)
@@ -32,20 +32,25 @@ def run_network(net, database, root, num_epochs=NUM_EPOCHS, train=True, test=Tru
 
 
 def train_network(model, train_loader, num_epochs, loss_function,optimizer, 
-                  validation_loader, reg_type=None, lambda_reg=0,
+                  validation_loader, hook=None, reg_type=None, lambda_reg=0, reg_config = [0,0,0],
                   plot_curve=False, plot_gradient=False):
     # model.h1.weight.register_hook(save_grad('h1.weight'))
     # model.h2.weight.register_hook(save_grad('h2.weight'))
     # model.out.weight.register_hook(save_grad('out.weight'))
     # print(gradients['out.weight'])
-
+    if reg_type == 'towards_saturation' or reg_type == 'h2_saturation_out_l2' or reg_type =='h2_saturation_out_l1':
+        hook = ActivationHook(model.h2)
+        
+    else:
+        hook = None
     gradients = {}
     dev = next(model.parameters()).device
     training_losses = []
     validation_accuracies = []
     num_batches = len(train_loader)
     for epoch in range(num_epochs):
-
+        hooks = []
+        hooks.append(hook) 
         model.train()
         epoch_loss = 0
         reg_epoch_loss = 0
@@ -55,7 +60,7 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             images, expected_outputs = images.to(dev, non_blocking=True), expected_outputs.to(dev, non_blocking=True)
             outputs = model(images)
             loss = loss_function(outputs, expected_outputs)
-            reg_factor = regularisation(model, reg_type)
+            reg_factor = regularisation(model, reg_type, hook, reg_config)
             
                   
             # print(reg_factor) 
@@ -92,7 +97,7 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             for name, param in model.named_parameters():
                 if 'weight' in name:
                     l2_norm = torch.norm(param).item()
-                    print(f'Epoch [{epoch+1}/100], Layer: {name}, L2 Norm: {l2_norm:.4f}')
+                    print(f'Epoch [{epoch+1}/{num_epochs}], Layer: {name}, L2 Norm: {l2_norm:.4f}')
 
 
 
