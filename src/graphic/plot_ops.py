@@ -2,8 +2,12 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from src.base.dicts import *
 from src.utils.utils import noise_label
+from src.nn.nn_operations import ActivationHook
+from src.nn.nn_operations import assign_to_model
+
 
 
 def plot_gradients(gradients, num_epochs):
@@ -253,3 +257,54 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
 
 
 
+   
+def activations_plot(model, test_dataset):
+
+
+    def create_hooks(model, layers, hook_type='output'):
+        hooks = {}
+        for name, layer in layers.items():
+            hooks[f'{name}_{hook_type}'] = ActivationHook(layer, hook_type)
+        return hooks
+
+    def plot_histogram_and_save(data, layer_name, hook_type, color='red'):
+        plt.figure(figsize=(10, 6))
+        plt.hist(data, bins=50, color=color, alpha=0.7)   
+        plt.title(f'Histogram of {layer_name} Layer ({hook_type}) Activations')
+        plt.xlabel('Activation Value')
+        plt.ylabel('Frequency')
+        plt.grid(True)
+        plt.savefig(f'{layer_name}_{hook_type}.png')
+        
+    assign_to_model(model, [0,0,0,0])
+
+    layers_to_hook = {'h1': model.h1, 'h2': model.h2, 'out': model.out}
+    input_hooks = create_hooks(model, layers_to_hook, hook_type='input')
+    output_hooks = create_hooks(model, layers_to_hook, hook_type='output')
+    all_hooks = {**input_hooks, **output_hooks}
+
+    num = random.randint(0,50)
+    for i,batch in enumerate(test_dataset):
+        if i == num:
+            images, _ = batch
+            break
+
+    output = model(images)
+
+    for name, hook in all_hooks.items():
+        layer_name, hook_type = name.split('_') 
+        plot_histogram_and_save(hook.activations.detach().cpu().numpy().flatten(), layer_name, hook_type)
+        if hook_type == 'input':
+            if layer_name == 'h1':
+                continue
+            noise = np.random.normal(0, 1, hook.activations.shape)
+            layer = layers_to_hook[layer_name]
+            weights = layer.weight.data.detach().numpy()
+            print(weights.shape)
+            bias = layer.bias.data.detach().numpy()
+            print(bias.shape)
+            noise_out = np.matmul(noise, weights.T) + bias
+            plot_histogram_and_save(noise_out.flatten(), layer_name, 'noise (var = 1.0)', 'brown')
+
+    for hook in all_hooks.values():
+        hook.close()

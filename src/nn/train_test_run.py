@@ -39,7 +39,7 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
     # model.out.weight.register_hook(save_grad('out.weight'))
     # print(gradients['out.weight'])
     if reg_type == 'towards_saturation' or reg_type == 'h2_saturation_out_l2' or reg_type =='h2_saturation_out_l1':
-        hook = ActivationHook(model.h2)
+        hook = ActivationHook(model.h2, hook_type='output')
         
     else:
         hook = None

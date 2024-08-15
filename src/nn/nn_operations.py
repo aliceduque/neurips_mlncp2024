@@ -72,12 +72,22 @@ def reg_zero_std(model):
     return total_sum
 
 class ActivationHook:
-    def __init__(self, layer):
-        self.pre_activations = None
-        self.hook = layer.register_forward_hook(self.hook_fn)
+    def __init__(self, layer, hook_type='output'):
+        self.activations = None
+        self.hook_type = hook_type
 
-    def hook_fn(self, module, input, output):
-        self.pre_activations = output
+        if hook_type == 'input':
+            self.hook = layer.register_forward_hook(self.hook_input_fn)
+        elif hook_type == 'output':
+            self.hook = layer.register_forward_hook(self.hook_output_fn)
+        else:
+            raise ValueError("hook_type must be either 'input' or 'output'")
+
+    def hook_input_fn(self, module, input, output):
+        self.activations = input[0]  # input is a tuple, take the first element
+
+    def hook_output_fn(self, module, input, output):
+        self.activations = output
 
     def close(self):
         self.hook.remove()
@@ -85,27 +95,27 @@ class ActivationHook:
 # def add_hook(layer):
 #     hook = ActivationHook(layer)
 #     hooks.append(hook)
-#     print(hook.pre_activations)
+#     print(hook.activations)
 
 def compute_penalty(hooks):
     total_penalty = 0.0
     for hook in hooks:
-        if hook.pre_activations is not None:
-            total_penalty += regularization_term(hook.pre_activations, -4, 4)
+        if hook.activations is not None:
+            total_penalty += regularization_term(hook.activations, -4, 4)
             
     return total_penalty
 
-def regularization_term(pre_activations, lower_bound, upper_bound):
+def regularization_term(activations, lower_bound, upper_bound):
     def sigmoid_derivative(x):
         sigmoid = 1 / (1 + torch.exp(-x))
         return sigmoid * (1 - sigmoid)
-    # lower_penalty = torch.nn.functional.relu(pre_activations - lower_bound)
-    # upper_penalty = torch.nn.functional.relu(upper_bound - pre_activations)
+    # lower_penalty = torch.nn.functional.relu(activations - lower_bound)
+    # upper_penalty = torch.nn.functional.relu(upper_bound - activations)
     # penalty = lower_penalty * upper_penalty
-    penalty = sigmoid_derivative(pre_activations).pow(2)
-    # print('act: ', pre_activations[0][0])
-    # print('derivative: ', sigmoid_derivative(pre_activations[0][0]))
-    # print('penalty: ',pre_activations[0][0] * sigmoid_derivative(pre_activations[0][0]))
+    penalty = sigmoid_derivative(activations).pow(2)
+    # print('act: ', activations[0][0])
+    # print('derivative: ', sigmoid_derivative(activations[0][0]))
+    # print('penalty: ',activations[0][0] * sigmoid_derivative(activations[0][0]))
     
     return penalty.abs().sum()
 
