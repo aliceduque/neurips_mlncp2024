@@ -112,7 +112,7 @@ def regularization_term(activations, lower_bound, upper_bound):
     # lower_penalty = torch.nn.functional.relu(activations - lower_bound)
     # upper_penalty = torch.nn.functional.relu(upper_bound - activations)
     # penalty = lower_penalty * upper_penalty
-    penalty = sigmoid_derivative(activations).pow(2)
+    penalty = sigmoid_derivative(activations)
     # print('act: ', activations[0][0])
     # print('derivative: ', sigmoid_derivative(activations[0][0]))
     # print('penalty: ',activations[0][0] * sigmoid_derivative(activations[0][0]))
@@ -141,11 +141,12 @@ def regularisation(model, type, hook=None, reg_config=[0,0,0]):
         reg_factor = compute_penalty(hooks)
         
     elif type =='h2_saturation_out_l2':
+        sum_h1 = torch.sum((1/(model.h1.weight**2 + 1e-15)))
         l2_factor_out = model.out.weight.pow(2).sum()
         l2_factor_h2 = model.h2.weight.pow(2).sum()
         hooks = []
         hooks.append(hook)        
-        reg_factor = reg_config[0]*compute_penalty(hooks) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out
+        reg_factor = reg_config[0]*compute_penalty(hooks) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out + 1e-7*sum_h1
         
     elif type =='h2_saturation_out_l1':
         l1_factor = model.out.weight.abs().sum()

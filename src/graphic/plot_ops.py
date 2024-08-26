@@ -275,6 +275,7 @@ def activations_plot(model, test_dataset):
         plt.ylabel('Frequency')
         plt.grid(True)
         plt.savefig(f'{layer_name}_{hook_type}.png')
+        plt.close()
         
     assign_to_model(model, [0,0,0,0])
 
@@ -283,7 +284,7 @@ def activations_plot(model, test_dataset):
     output_hooks = create_hooks(model, layers_to_hook, hook_type='output')
     all_hooks = {**input_hooks, **output_hooks}
 
-    num = random.randint(0,50)
+    num = random.randint(0,len(test_dataset))
     for i,batch in enumerate(test_dataset):
         if i == num:
             images, _ = batch
@@ -300,9 +301,7 @@ def activations_plot(model, test_dataset):
             noise = np.random.normal(0, 1, hook.activations.shape)
             layer = layers_to_hook[layer_name]
             weights = layer.weight.data.detach().numpy()
-            print(weights.shape)
             bias = layer.bias.data.detach().numpy()
-            print(bias.shape)
             noise_out = np.matmul(noise, weights.T) + bias
             plot_histogram_and_save(noise_out.flatten(), layer_name, 'noise (var = 1.0)', 'brown')
 

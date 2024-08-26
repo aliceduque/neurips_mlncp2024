@@ -12,8 +12,8 @@ from src.base.dicts import create_net_dict
 
 
 def main():
-    test_name = 'test_with_activations'
-    database = 'MNIST'
+    test_name = 'reg_19_abs'
+    database = 'FashionMNIST'
     device = 'cpu'
     noise_on_activation = 'after'
     baseline_initialisation = True
@@ -23,16 +23,16 @@ def main():
   
     data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
     train = Train_Config(
-        train_noise_types = ['AddUnc'],
-        train_noise_values = [0.0],
+        train_noise_types = [],
+        train_noise_values = [],
         activations = ['sigm'],
         baseline = True,
-        learning_rate ='specific',
-        num_epochs = 1,
+        learning_rate =0.01,
+        num_epochs =40,
         optimizer = 'adam',
-        regularisation = None,
-        lambda_reg = 1e-2,
-        reg_config = [0.5, 0.01, 1], # Saturation of h2, L2 of h2, L2 out
+        regularisation = 'h2_saturation_out_l2',
+        lambda_reg = 1.2e-2,
+        reg_config = [0.1,0.015,2.0], # Saturation of h2, L2 of h2, L2 out (basic: 0.5, 0.01, 1)
         save_histogram = True,
         save_parameters = True,
         save_train_curve = True,
@@ -87,9 +87,10 @@ def main():
             if baseline_initialisation:
                 if not torch.all(torch.eq(train_vec, torch.tensor([0., 0., 0., 0.]))):
                     load_model_parameters(model,rf"{root}/{activation}/Bas/parameters/0.00.pth")
-                else:
-                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240805_300_neurons\{activation}\Bas\parameters\0.00.pth")    
-                print('loaded baseline parameters')
+                    print('loaded baseline parameters')
+                elif train.reg_type is not None:
+                    load_model_parameters(model,rf"C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/outcomes/FashionMNIST/20240820_fashionMNIST/sigm/Bas/parameters/0.00.pth")    
+                    print('loaded baseline parameters')
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
             train.train_and_save(model, cwd, train_vec)                
             for m, mat in enumerate(test_mat):
