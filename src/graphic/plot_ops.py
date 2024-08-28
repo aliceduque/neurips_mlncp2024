@@ -12,7 +12,6 @@ from src.nn.nn_operations import assign_to_model
 
 def plot_gradients(gradients, num_epochs):
     fig = plt.figure(figsize=(18,8))
-    
     for idx, (name, grads) in enumerate(gradients.items()):
         flat_grad = [item for sublist1 in grads for sublist2 in sublist1 for item in sublist2]
         bins = np.linspace(min(flat_grad), max(flat_grad), 30) 
@@ -260,7 +259,6 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
    
 def activations_plot(model, test_dataset):
 
-
     def create_hooks(model, layers, hook_type='output'):
         hooks = {}
         for name, layer in layers.items():
@@ -275,6 +273,7 @@ def activations_plot(model, test_dataset):
         plt.ylabel('Frequency')
         plt.grid(True)
         plt.savefig(f'{layer_name}_{hook_type}.png')
+        plt.close()
         
     assign_to_model(model, [0,0,0,0])
 

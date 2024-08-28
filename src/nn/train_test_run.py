@@ -38,9 +38,8 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
     # model.h2.weight.register_hook(save_grad('h2.weight'))
     # model.out.weight.register_hook(save_grad('out.weight'))
     # print(gradients['out.weight'])
-    if reg_type == 'towards_saturation' or reg_type == 'h2_saturation_out_l2' or reg_type =='h2_saturation_out_l1':
+    if reg_type == 'towards_saturation' or reg_type == 'custom_addunc' or reg_type =='h2_saturation_out_l1':
         hook = ActivationHook(model.h2, hook_type='output')
-        
     else:
         hook = None
     gradients = {}
@@ -61,30 +60,47 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             outputs = model(images)
             loss = loss_function(outputs, expected_outputs)
             reg_factor = regularisation(model, reg_type, hook, reg_config)
-            
-                  
+            # torch.autograd.set_detect_anomaly(True)
+                             
             # print(reg_factor) 
             total_loss = loss + lambda_reg * reg_factor
             # print('loss = ', loss)
             optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
+            # torch.autograd.set_detect_anomaly(True)
+            
             
             # for name, param in model.named_parameters():
+            #     # print(f'grad max {name} = {max(param.grad.flatten())}')
+            #     if torch.isnan(param.grad).any():
+            #         print(f"GRADIENT NaN detected in {name}")  
             #     if 'weight' in name and param.grad is not None:
             #         if name not in epoch_gradients:
             #             epoch_gradients[name] = param.grad.clone().detach()
             #         else:
             #             epoch_gradients[name] += param.grad.clone().detach()
 
+            
+            # print(f'{i}, epoch {epoch}, max weight: {max(model.h1.weight.flatten())}')
+            # for name, param in model.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"{i}, Gradient before clipping ({name}): {param.grad}")
+            # for param in model.parameters():
+            #     if param.grad is not None:
+            #         grad_norm = param.grad.data.norm(2).item()
+            # print(f'iteration {i},  {grad_norm}')
+            # print('loss : ', loss)
 
+            # print(f'after clip: {model.out.weight.grad}')
             optimizer.step()
             reg_epoch_loss += lambda_reg * reg_factor
             epoch_loss += total_loss
-        # for name, grad in epoch_gradients.items():
-        #     if name not in gradients:
-        #         gradients[name] = []
-        #     avg_grad = grad / num_batches
-        #     gradients[name].append(avg_grad)
+            
+        for name, grad in epoch_gradients.items():
+            if name not in gradients:
+                gradients[name] = []
+            avg_grad = grad / num_batches
+            gradients[name].append(avg_grad)
 
         avg_reg_loss = reg_epoch_loss / num_batches
         avg_training_loss = epoch_loss / num_batches

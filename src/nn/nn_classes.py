@@ -34,36 +34,6 @@ class Net_Sigm(nn.Module):
         x = self.out(x)
         return x
 
-# class Net_Sigm(nn.Module):
-#     def __init__(self, noise_on_activation, add_unc_var=0.0, mul_unc_var=0.0, add_corr_var=0.0, mul_corr_var=0.0,
-#                  add_unc_mean=0, mul_unc_mean=0, add_corr_mean=0, mul_corr_mean=0):
-#         super(Net_Sigm, self).__init__()
-#         self.add_unc_mean = add_unc_mean
-#         self.add_unc_var = add_unc_var
-#         self.mul_unc_mean = mul_unc_mean
-#         self.mul_unc_var = mul_unc_var
-#         self.add_corr_mean = add_corr_mean
-#         self.add_corr_var = add_corr_var
-#         self.mul_corr_mean = mul_corr_mean
-#         self.mul_corr_var = mul_corr_var        
-#         self.h1 = nn.Linear(INPUT_SIZE, HIDDEN_NEURONS)
-#         self.h2 = nn.Linear(HIDDEN_NEURONS,HIDDEN_NEURONS)
-#         self.out = nn.Linear(HIDDEN_NEURONS, OUTPUT_SIZE)
-#         self.noise = AddMulGaussianNoise(add_unc_var,mul_unc_var,add_corr_var,mul_corr_var,add_unc_mean,
-#                                          mul_unc_mean,add_corr_mean,mul_corr_mean)
-#         self.noise_on_activation = noise_on_activation
-
-#     def forward(self, x):
-#         x = x.reshape(-1, INPUT_SIZE)
-#         if self.noise_on_activation == 'before':
-#             x = torch.sigmoid(self.noise(self.h1(x)))
-#             x = torch.sigmoid(self.noise(self.h2(x)))
-#         elif self.noise_on_activation == 'after':
-#             x = self.noise(torch.sigmoid(self.h1(x)))
-#             x = self.noise(torch.sigmoid(self.h2(x)))        
-#         x = self.out(x)
-#         return x
-
 
 class Net_ReLU(nn.Module):
     def __init__(self, noise_on_activation, var=[0,0,0,0], mean=[0,0,0,0], noise_no_grad = False):
@@ -306,6 +276,48 @@ class Net_Tanh(nn.Module):
         x = self.out(x)
         return x
     
+class Net_Photon_Sigm(nn.Module):
+    def __init__(self, noise_on_activation, var=[0,0,0,0], mean=[0,0,0,0], noise_no_grad = False):
+        super(Net_Photon_Sigm, self).__init__()
+        self.var = var
+        self.mean = mean
+        self.h1 = nn.Linear(INPUT_SIZE, HIDDEN_NEURONS)
+        self.h2 = nn.Linear(HIDDEN_NEURONS, HIDDEN_NEURONS)
+        self.out = nn.Linear(HIDDEN_NEURONS, OUTPUT_SIZE)
+        if noise_no_grad:
+            self.noise = AddMulGaussianNoise_nograd.apply
+        else:
+            self.noise = AddMulGaussianNoise.apply
+        self.phot_sigm = Photonic_sigmoid()
+        self.noise_on_activation = noise_on_activation
+        
+    def check_for_nan(self, tensor, name=""):
+        if torch.isnan(tensor).any():
+            print(f"NaN detected in {name}")    
+        
+    def forward(self, x):
+        x = x.reshape(-1, INPUT_SIZE)
+        if self.noise_on_activation == 'before':
+            x = self.phot_sigm(self.noise(self.h1(x), self.var, self.mean))
+            x = self.phot_sigm(self.noise(self.h1(x), self.var, self.mean))
+        elif self.noise_on_activation == 'after':
+            x = self.h1(x)
+            self.check_for_nan(x, 'After input weights')
+            x = self.phot_sigm(x)
+            self.check_for_nan(x, 'After 1st activation')
+            x = self.noise(x, self.var, self.mean)
+            self.check_for_nan(x, 'After 1st noise')
+            x = self.h2(x)
+            self.check_for_nan(x, 'After h2')
+            x = self.phot_sigm(x)
+            self.check_for_nan(x, 'After 2nd activation')
+            x = self.noise(x, self.var, self.mean)
+            self.check_for_nan(x, 'After 2nd noise')
+                        
+            # x = self.noise(self.phot_sigm(self.h1(x)), self.var, self.mean)
+            # x = self.noise(self.phot_sigm(self.h2(x)), self.var, self.mean)      
+        x = self.out(x)
+        return x    
 
 class Net_Sigm_shift(nn.Module):
     def __init__(self, noise_on_activation, var=[0,0,0,0], mean=[0,0,0,0], noise_no_grad = False):
@@ -332,7 +344,6 @@ class Net_Sigm_shift(nn.Module):
             x = self.noise(self.sigm_shift(self.h2(x)), self.var, self.mean)      
         x = self.out(x)
         return x
-
 
 
 class AddMulGaussianNoise_nograd(torch.autograd.Function):
@@ -420,6 +431,9 @@ class AddMulGaussianNoise(torch.autograd.Function):
         return grad_x, None, None
     def update_parameters(self, var):
         self.var = var
+        
+        
+        
 
 # class AddMulGaussianNoise(nn.Module):
 #     def __init__(self, add_unc_var=0.0, mul_unc_var=0.0, add_corr_var=0.0, mul_corr_var=0.0,

@@ -109,10 +109,19 @@ def regularization_term(activations, lower_bound, upper_bound):
     def sigmoid_derivative(x):
         sigmoid = 1 / (1 + torch.exp(-x))
         return sigmoid * (1 - sigmoid)
+    
+    photon = Photonic_derivative_reg()
+     
+    penalty = photon.forward(activations)
+    if torch.isnan(penalty).any():
+        print(f"NaN detected in Penalty") 
+
+        
     # lower_penalty = torch.nn.functional.relu(activations - lower_bound)
     # upper_penalty = torch.nn.functional.relu(upper_bound - activations)
     # penalty = lower_penalty * upper_penalty
-    penalty = sigmoid_derivative(activations).pow(2)
+
+    
     # print('act: ', activations[0][0])
     # print('derivative: ', sigmoid_derivative(activations[0][0]))
     # print('penalty: ',activations[0][0] * sigmoid_derivative(activations[0][0]))
@@ -140,13 +149,13 @@ def regularisation(model, type, hook=None, reg_config=[0,0,0]):
         hooks.append(hook)        
         reg_factor = compute_penalty(hooks)
         
-    elif type =='h2_saturation_out_l2':
+    elif type =='custom_addunc':
         l2_factor_out = model.out.weight.pow(2).sum()
         l2_factor_h2 = model.h2.weight.pow(2).sum()
+        sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
         hooks = []
         hooks.append(hook)        
-        reg_factor = reg_config[0]*compute_penalty(hooks) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out
-        
+        reg_factor = reg_config[0]*compute_penalty(hooks) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out 
     elif type =='h2_saturation_out_l1':
         l1_factor = model.out.weight.abs().sum()
         hooks = []
@@ -215,4 +224,34 @@ def discretise_weights (model):
             param.data = discretise_tensor(param.data)
             
             
+class Photonic_derivative_function(autograd.Function):
+    @staticmethod
+    def forward(ctx, x):
+        ctx.save_for_backward(x)
+        factor = 1
+        def derivative(x):
+            exp_part = torch.exp((x - 0.145) / 0.033)
+            deriv = (-exp_part / ((1 + exp_part) ** 2)) * ((0.06 - 1.005) / 0.033)
+            return deriv
+
+        derivative = torch.where(x > 2, torch.tensor(1e-28, device=x.device, dtype=x.dtype), derivative(x))
+        return derivative
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        def second_derivative(x):
+            first_term = ((18.3655 * torch.exp(6.06061*(x - 0.145)))/(torch.exp(3.0303*(x - 0.145)) + 1).pow(3))
+            second_term = (9.18274 * torch.exp(3.0303*(x - 0.145)))/(torch.exp(3.0303*(x - 0.145)) + 1).pow(2)
+            result = -0.945 * (first_term - second_term)
+            return result
                         
+        x, = ctx.saved_tensors
+        grad_input = torch.where(x > 14, torch.tensor(1e-19, device=x.device, dtype=x.dtype), second_derivative(x))
+        grad_input = grad_input * grad_output
+
+        return grad_input
+
+
+class Photonic_derivative_reg(nn.Module):
+    def forward(self, x):
+        return Photonic_derivative_function.apply(x)
