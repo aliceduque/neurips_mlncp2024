@@ -12,7 +12,8 @@ create_net_dict = {
     'erf': (Net_Erf, 0.01),
     'gelu': (Net_GELU, 0.005),
     'tanh': (Net_Tanh, 0.05),
-    'sigm_shift': (Net_Sigm_shift, 0.01)
+    'sigm_shift': (Net_Sigm_shift, 0.01),
+    'phot_sigm': (Net_Photon_Sigm, 0.01)
 }
 
 clean_text_dict = { 'sigm': 'Sigmoid',

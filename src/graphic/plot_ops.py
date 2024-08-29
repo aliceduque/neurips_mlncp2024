@@ -12,7 +12,6 @@ from src.nn.nn_operations import assign_to_model
 
 def plot_gradients(gradients, num_epochs):
     fig = plt.figure(figsize=(18,8))
-    
     for idx, (name, grads) in enumerate(gradients.items()):
         flat_grad = [item for sublist1 in grads for sublist2 in sublist1 for item in sublist2]
         bins = np.linspace(min(flat_grad), max(flat_grad), 30) 
@@ -33,7 +32,7 @@ def plot_gradients(gradients, num_epochs):
     return fig
 
 
-def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
+def plot_loss_curve (num_epochs, training_losses, train_accuracies, validation_accuracies):
     for i,loss in enumerate(training_losses):
         training_losses[i] = loss.detach().cpu().numpy()
 
@@ -45,8 +44,9 @@ def plot_loss_curve (num_epochs, training_losses, validation_accuracies):
     ax1.tick_params(axis='y', labelcolor='tab:blue')
 
     ax2 = ax1.twinx()
-    ax2.set_ylabel('Validation Accuracy (%)', color='tab:orange', fontsize=14)
+    ax2.set_ylabel('Accuracy (%)', color='tab:orange', fontsize=14)
     ax2.plot(range(1, num_epochs + 1), validation_accuracies, label='Validation Accuracy', color='tab:orange')
+    ax2.plot(range(1, num_epochs + 1), train_accuracies, label='Training Accuracy', color='tab:brown')
     ax2.tick_params(axis='y', labelcolor='tab:orange')
 
     fig.tight_layout()
@@ -259,7 +259,6 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
 
    
 def activations_plot(model, test_dataset):
-
 
     def create_hooks(model, layers, hook_type='output'):
         hooks = {}

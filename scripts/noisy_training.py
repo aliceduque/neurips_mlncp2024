@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from datetime import datetime
 from src.nn.test_config_class import Test_Config
 from src.nn.train_config_class import Train_Config
@@ -10,29 +11,28 @@ from src.utils.utils import noise_label
 from src.base.dicts import create_net_dict
 
 
-
 def main():
-    test_name = 'reg_19_abs'
-    database = 'FashionMNIST'
+    test_name = 'photonic_sigmoid_reg_sgd_120ep'
+    database = 'MNIST'
     device = 'cpu'
     noise_on_activation = 'after'
     baseline_initialisation = True
     noise_no_grad = False
-
+    activation_reg = 'phot_sigm'
 
   
     data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
     train = Train_Config(
         train_noise_types = [],
         train_noise_values = [],
-        activations = ['sigm'],
+        activations = [activation_reg],
         baseline = True,
-        learning_rate =0.01,
-        num_epochs =40,
-        optimizer = 'adam',
-        regularisation = 'h2_saturation_out_l2',
-        lambda_reg = 1.2e-2,
-        reg_config = [0.1,0.015,2.0], # Saturation of h2, L2 of h2, L2 out (basic: 0.5, 0.01, 1)
+        learning_rate = 5e-6,
+        num_epochs = 120,
+        optimizer = 'sgd',
+        regularisation = f'addunc_{activation_reg}',
+        lambda_reg = 6e-3,
+        reg_config = [0.01, 0.015, 3.0], # Saturation of h2, L2 of h2, L2 out
         save_histogram = True,
         save_parameters = True,
         save_train_curve = True,
@@ -46,7 +46,7 @@ def main():
 
     test = Test_Config(
         noise_range = [0.001, 1],
-        noise_points = 30,
+        noise_points = 40,
         repetition = 3,
         test_noises = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor'],
         calc_acc = True,
@@ -83,16 +83,20 @@ def main():
             noise_type = noise_label(train_vec)
             cwd = create_folder(cwd, noise_type, cd = True)
             model = create_net(activation, noise_on_activation, train_vec, noise_no_grad).to(device)
+            # init_weights_normal(model)
             print(train_vec)
             if baseline_initialisation:
                 if not torch.all(torch.eq(train_vec, torch.tensor([0., 0., 0., 0.]))):
                     load_model_parameters(model,rf"{root}/{activation}/Bas/parameters/0.00.pth")
                     print('loaded baseline parameters')
                 elif train.reg_type is not None:
-                    load_model_parameters(model,rf"C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/outcomes/FashionMNIST/20240820_fashionMNIST/sigm/Bas/parameters/0.00.pth")    
+                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240829_photonic_sigmoid_reg_from_scratch_120ep\{activation}\Bas\parameters\0.00.pth")    
                     print('loaded baseline parameters')
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
-            train.train_and_save(model, cwd, train_vec)                
+            train.train_and_save(model, cwd, train_vec)
+            cwd = create_folder(cwd, 'activations', cd=True)
+            activations_plot(model, test.test_load)
+            cwd = up_one_level(cwd)                
             for m, mat in enumerate(test_mat):
                 for v, test_vec in enumerate(mat):
                     print(test_vec)
@@ -101,9 +105,7 @@ def main():
                         test.test(model, r, v, m)
             test.save_points(activation, train_vec, cwd)
             test.plots(activation, train_vec, noise_on_activation)
-            create_folder(cwd, 'activations', cd=True)
-            activations_plot(model, test.test_load)
-            cwd = up_one_level(cwd)
+
         cwd = up_one_level(cwd)
 
 

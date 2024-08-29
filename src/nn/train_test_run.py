@@ -34,19 +34,15 @@ def run_network(net, database, root, num_epochs, lr, train=True, test=True, redu
 def train_network(model, train_loader, num_epochs, loss_function,optimizer, 
                   validation_loader, hook=None, reg_type=None, lambda_reg=0, reg_config = [0,0,0],
                   plot_curve=False, plot_gradient=False):
-    # model.h1.weight.register_hook(save_grad('h1.weight'))
-    # model.h2.weight.register_hook(save_grad('h2.weight'))
-    # model.out.weight.register_hook(save_grad('out.weight'))
-    # print(gradients['out.weight'])
-    if reg_type == 'towards_saturation' or reg_type == 'h2_saturation_out_l2' or reg_type =='h2_saturation_out_l1':
+    if reg_type == 'addunc_sigm' or reg_type == 'addunc_phot_sigm':
         hook = ActivationHook(model.h2, hook_type='output')
-        
     else:
         hook = None
     gradients = {}
     dev = next(model.parameters()).device
     training_losses = []
     validation_accuracies = []
+    train_accuracies = []
     num_batches = len(train_loader)
     for epoch in range(num_epochs):
         hooks = []
@@ -61,25 +57,40 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             outputs = model(images)
             loss = loss_function(outputs, expected_outputs)
             reg_factor = regularisation(model, reg_type, hook, reg_config)
-            
-                  
-            # print(reg_factor) 
+            # torch.autograd.set_detect_anomaly(True)
+                             
             total_loss = loss + lambda_reg * reg_factor
-            # print('loss = ', loss)
+
             optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
             
+            
             # for name, param in model.named_parameters():
+            #     # print(f'grad max {name} = {max(param.grad.flatten())}')
+            #     if torch.isnan(param.grad).any():
+            #         print(f"GRADIENT NaN detected in {name}")  
             #     if 'weight' in name and param.grad is not None:
             #         if name not in epoch_gradients:
             #             epoch_gradients[name] = param.grad.clone().detach()
             #         else:
             #             epoch_gradients[name] += param.grad.clone().detach()
 
+            
+            # print(f'{i}, epoch {epoch}, max weight: {max(model.h1.weight.flatten())}')
+            # for name, param in model.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"{i}, Gradient before clipping ({name}): {param.grad}")
+            # for param in model.parameters():
+            #     if param.grad is not None:
+            #         grad_norm = param.grad.data.norm(2).item()
+            # print(f'iteration {i},  {grad_norm}')
+            # print('loss : ', loss)
 
+            # print(f'after clip: {model.out.weight.grad}')
             optimizer.step()
             reg_epoch_loss += lambda_reg * reg_factor
             epoch_loss += total_loss
+            
         # for name, grad in epoch_gradients.items():
         #     if name not in gradients:
         #         gradients[name] = []
@@ -90,7 +101,9 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
         avg_training_loss = epoch_loss / num_batches
         training_losses.append(avg_training_loss)
         _, validation_accuracy, _ = test_network(model, validation_loader)
-        validation_accuracies.append(validation_accuracy) 
+        _, train_accuracy, _ = test_network(model, train_loader)
+        validation_accuracies.append(validation_accuracy)
+        train_accuracies.append(train_accuracy) 
         print('Epoch [{}/{}], Training Loss: {:.4f} (of which reg = {:.4f}), Validation Accuracy: {:.2f}%'.format(
             epoch + 1, num_epochs, avg_training_loss, avg_reg_loss, validation_accuracy))
         with torch.no_grad():
@@ -100,9 +113,8 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
                     print(f'Epoch [{epoch+1}/{num_epochs}], Layer: {name}, L2 Norm: {l2_norm:.4f}')
 
 
-
     if plot_curve:
-        fig = plot_loss_curve(num_epochs,training_losses,validation_accuracies)
+        fig = plot_loss_curve(num_epochs,training_losses,train_accuracies,validation_accuracies)
     else:
        fig = None
 
