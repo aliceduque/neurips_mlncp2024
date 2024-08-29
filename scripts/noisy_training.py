@@ -12,7 +12,7 @@ from src.base.dicts import create_net_dict
 
 
 def main():
-    test_name = 'photonic_sigmoid_reg2'
+    test_name = 'photonic_sigmoid_reg_sgd_120ep'
     database = 'MNIST'
     device = 'cpu'
     noise_on_activation = 'after'
@@ -27,11 +27,11 @@ def main():
         train_noise_values = [],
         activations = [activation_reg],
         baseline = True,
-        learning_rate = 5e-3,
-        num_epochs = 40,
-        optimizer = 'adam',
+        learning_rate = 5e-6,
+        num_epochs = 120,
+        optimizer = 'sgd',
         regularisation = f'addunc_{activation_reg}',
-        lambda_reg = 5e-3,
+        lambda_reg = 6e-3,
         reg_config = [0.01, 0.015, 3.0], # Saturation of h2, L2 of h2, L2 out
         save_histogram = True,
         save_parameters = True,
@@ -90,7 +90,7 @@ def main():
                     load_model_parameters(model,rf"{root}/{activation}/Bas/parameters/0.00.pth")
                     print('loaded baseline parameters')
                 elif train.reg_type is not None:
-                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240828_photonic_sigmoid_reg_BEST\{activation}\Bas\parameters\0.00.pth")    
+                    load_model_parameters(model,rf"C:\Users\220429111\Box\University\PhD\Codes\Python\neural_net_noise\outcomes\MNIST\20240829_photonic_sigmoid_reg_from_scratch_120ep\{activation}\Bas\parameters\0.00.pth")    
                     print('loaded baseline parameters')
             print(rf'Activation: {activation} \\ Noise {noise_type} = {torch.amax(train_vec)} {noise_on_activation} activation')
             train.train_and_save(model, cwd, train_vec)

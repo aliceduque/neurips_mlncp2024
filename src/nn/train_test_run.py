@@ -42,6 +42,7 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
     dev = next(model.parameters()).device
     training_losses = []
     validation_accuracies = []
+    train_accuracies = []
     num_batches = len(train_loader)
     for epoch in range(num_epochs):
         hooks = []
@@ -100,7 +101,9 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
         avg_training_loss = epoch_loss / num_batches
         training_losses.append(avg_training_loss)
         _, validation_accuracy, _ = test_network(model, validation_loader)
-        validation_accuracies.append(validation_accuracy) 
+        _, train_accuracy, _ = test_network(model, train_loader)
+        validation_accuracies.append(validation_accuracy)
+        train_accuracies.append(train_accuracy) 
         print('Epoch [{}/{}], Training Loss: {:.4f} (of which reg = {:.4f}), Validation Accuracy: {:.2f}%'.format(
             epoch + 1, num_epochs, avg_training_loss, avg_reg_loss, validation_accuracy))
         with torch.no_grad():
@@ -111,7 +114,7 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
 
 
     if plot_curve:
-        fig = plot_loss_curve(num_epochs,training_losses,validation_accuracies)
+        fig = plot_loss_curve(num_epochs,training_losses,train_accuracies,validation_accuracies)
     else:
        fig = None
 
