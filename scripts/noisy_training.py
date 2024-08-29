@@ -10,14 +10,6 @@ from src.graphic.plot_ops import activations_plot
 from src.utils.utils import noise_label
 from src.base.dicts import create_net_dict
 
-def init_weights_normal(m):
-    for m in m.modules():
-        if isinstance(m, nn.Linear):
-            print('init')
-            torch.nn.init.normal_(m.weight, mean=0, std=0.00001)  # Customize mean and std as needed
-            if m.bias is not None:
-                torch.nn.init.constant_(m.bias, 0)  # Optionally initialize biases to zero
-                
 
 def main():
     test_name = 'photonic_sigmoid_reg2'
@@ -26,19 +18,19 @@ def main():
     noise_on_activation = 'after'
     baseline_initialisation = True
     noise_no_grad = False
-
+    activation_reg = 'phot_sigm'
 
   
     data_file = rf'C:/Users/220429111/Box/University/PhD/Codes/Python/neural_net_noise/data'
     train = Train_Config(
         train_noise_types = [],
         train_noise_values = [],
-        activations = ['phot_sigm'],
+        activations = [activation_reg],
         baseline = True,
         learning_rate = 5e-3,
         num_epochs = 40,
         optimizer = 'adam',
-        regularisation = 'custom_addunc',
+        regularisation = f'addunc_{activation_reg}',
         lambda_reg = 5e-3,
         reg_config = [0.01, 0.015, 3.0], # Saturation of h2, L2 of h2, L2 out
         save_histogram = True,

@@ -34,11 +34,7 @@ def run_network(net, database, root, num_epochs, lr, train=True, test=True, redu
 def train_network(model, train_loader, num_epochs, loss_function,optimizer, 
                   validation_loader, hook=None, reg_type=None, lambda_reg=0, reg_config = [0,0,0],
                   plot_curve=False, plot_gradient=False):
-    # model.h1.weight.register_hook(save_grad('h1.weight'))
-    # model.h2.weight.register_hook(save_grad('h2.weight'))
-    # model.out.weight.register_hook(save_grad('out.weight'))
-    # print(gradients['out.weight'])
-    if reg_type == 'towards_saturation' or reg_type == 'custom_addunc' or reg_type =='h2_saturation_out_l1':
+    if reg_type == 'addunc_sigm' or reg_type == 'addunc_phot_sigm':
         hook = ActivationHook(model.h2, hook_type='output')
     else:
         hook = None
@@ -62,12 +58,10 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             reg_factor = regularisation(model, reg_type, hook, reg_config)
             # torch.autograd.set_detect_anomaly(True)
                              
-            # print(reg_factor) 
             total_loss = loss + lambda_reg * reg_factor
-            # print('loss = ', loss)
+
             optimizer.zero_grad()
             total_loss.backward(retain_graph=True)
-            # torch.autograd.set_detect_anomaly(True)
             
             
             # for name, param in model.named_parameters():
@@ -96,11 +90,11 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             reg_epoch_loss += lambda_reg * reg_factor
             epoch_loss += total_loss
             
-        for name, grad in epoch_gradients.items():
-            if name not in gradients:
-                gradients[name] = []
-            avg_grad = grad / num_batches
-            gradients[name].append(avg_grad)
+        # for name, grad in epoch_gradients.items():
+        #     if name not in gradients:
+        #         gradients[name] = []
+        #     avg_grad = grad / num_batches
+        #     gradients[name].append(avg_grad)
 
         avg_reg_loss = reg_epoch_loss / num_batches
         avg_training_loss = epoch_loss / num_batches
@@ -114,7 +108,6 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
                 if 'weight' in name:
                     l2_norm = torch.norm(param).item()
                     print(f'Epoch [{epoch+1}/{num_epochs}], Layer: {name}, L2 Norm: {l2_norm:.4f}')
-
 
 
     if plot_curve:
