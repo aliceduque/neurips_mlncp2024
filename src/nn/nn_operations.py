@@ -120,7 +120,7 @@ def regularisation(model, type, hook=None, reg_config=[0,0,0]):
     if type == 'custom_sum':
         sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
         sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
-        reg_factor = sum_h2 + sum_out
+        reg_factor = sum_h2 + 30*sum_out
         
        
     elif type == 'custom_std':

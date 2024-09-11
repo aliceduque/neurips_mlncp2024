@@ -106,23 +106,27 @@ def weights_histogram(net, title):
     weight_h2 = net_copy.h2.weight.detach().cpu().numpy().flatten()
     weight_out = net_copy.out.weight.detach().cpu().numpy().flatten()
 
-    ax = plt.figure(figsize=(8,10))
+    ax = plt.figure(figsize=(8,13))
 
     plt.suptitle(title)
     plt.subplot(3, 1, 1)
     plt.hist(weight_h1, bins=20, color='blue', alpha=0.7)
-    plt.title('Layer 1 weight Histogram')
+    plt.title('Layer 1 weight Histogram', fontsize=15)
 
     plt.subplot(3, 1, 2)
     plt.hist(weight_h2, bins=20, color='blue', alpha=0.7)
-    plt.title('Layer 2 weight Histogram')
+    plt.title('Layer 2 weight Histogram', fontsize=15)
 
     plt.subplot(3,1, 3)
     plt.hist(weight_out, bins=20, color='blue', alpha=0.7)
-    plt.title('Output Layer weight Histogram')
+    plt.title('Output Layer weight Histogram', fontsize=15)
 
+    plt.tick_params(axis='x', which='major', labelsize=20)
+    plt.tick_params(axis='y', which='major', labelsize=12)
     plt.tight_layout()
-
+    plt.xlabel('Weight value', fontsize=20)
+    plt.ylabel('Occurrences', fontsize=20)
+    plt.tight_layout()
     return ax
 
 def biases_histogram(net, title):
@@ -195,26 +199,29 @@ def weights_mean_std(model, title):
         
         num_layers = len(layer_means)
         fig, axes = plt.subplots(num_layers, 1, figsize=(12, 16), sharex=False)
-        colors = plt.cm.brg(np.linspace(0, 1, num_layers))
+        colors = ['blue', 'red', 'green']
+        # colors = plt.cm.brg(np.linspace(0, 1, num_layers))
 
         for i in range(num_layers):
             ax = axes[i]
             x_values = range(len(layer_means[i]))
             print(x_values)
-            ax.plot(x_values, layer_means[i], color=colors[i], label=f'Layer {i+1} Mean', linewidth=3)
+            ax.plot(x_values, layer_means[i], color=colors[i], label=f'Row Mean', linewidth=4)
             ax.fill_between(range(len(layer_means[i])),
-                            layer_means[i] - 2*layer_std_devs[i],
-                            layer_means[i] + 2*layer_std_devs[i],
+                            layer_means[i] - layer_std_devs[i],
+                            layer_means[i] + layer_std_devs[i],
                             color=colors[i], alpha=0.2)
-            if bias is not None:
-                ax.bar(x_values, bias[i], color='gray', alpha=0.4, label=f'layer {i+1} Bias')
-            ax.set_ylabel('Values')
-            ax.legend()
+            # if bias is not None:
+            #     ax.bar(x_values, bias[i], color='gray', alpha=0.4, label=f'layer {i+1} Bias')
+            ax.set_ylabel('Weight values', fontsize=20)
+            ax.legend(fontsize=18)
             ax.grid(True)
-            ax.set_title(f'Layer {i+1}')
+            ax.set_xlabel(f'{row_or_col} #', fontsize=24)
+            ax.set_title(f'Layer {i+1}', fontsize=24)
+            ax.tick_params(axis='both', which='major', labelsize=18)
 
-        axes[-1].set_xlabel(f'{row_or_col} #')
-        fig.suptitle(f'Mean Values and Standard Deviation of {row_or_col}s for {title}', fontsize=16)
+        
+        # fig.suptitle(f'Mean Values and Standard Deviation of {row_or_col}s for {title}', fontsize=20)
         plt.tight_layout(rect=[0, 0, 1, 0.96])
         return fig
     
@@ -266,12 +273,14 @@ def activations_plot(model, test_dataset):
             hooks[f'{name}_{hook_type}'] = ActivationHook(layer, hook_type)
         return hooks
 
-    def plot_histogram_and_save(data, layer_name, hook_type, color='red'):
+    def plot_histogram_and_save(data, layer_name, hook_type, color='blue'):
         plt.figure(figsize=(10, 6))
         plt.hist(data, bins=50, color=color, alpha=0.7)   
-        plt.title(f'Histogram of {layer_name} Layer ({hook_type}) Activations')
-        plt.xlabel('Activation Value')
-        plt.ylabel('Frequency')
+        # plt.title(f'Histogram of {layer_name} Layer ({hook_type}) Activations')
+        plt.xlabel('Activation Value', fontsize=20)
+        plt.ylabel('Occurrences', fontsize=20)
+        plt.tick_params(axis='x', which='major', labelsize=20)
+        plt.tick_params(axis='y', which='major', labelsize=12)
         plt.grid(True)
         plt.savefig(f'{layer_name}_{hook_type}.png')
         plt.close()
