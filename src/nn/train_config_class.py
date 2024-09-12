@@ -15,7 +15,6 @@ class Train_Config:
                  train_noise_values,
                  activations,
                  database,
-                 data_file,                
                  baseline,
                  learning_rate,
                  num_epochs,
@@ -40,7 +39,6 @@ class Train_Config:
         self.save_parameters = save_parameters
         self.activations = activations
         self.database = database
-        self.data_file = data_file
         self.optimizer = optimizer
         self.noise_on_activation = noise_on_activation
         self.device = device
@@ -63,9 +61,6 @@ class Train_Config:
             train_mat = torch.cat((baseline_row, train_mat), dim=0)
         return train_mat
 
-    # def train_loader(self, device):
-    #     self.train_load, self.validation_load = get_train_loader(database=self.database, root=self.data_file,
-    #                                                                  reduced=False, device=device)
 
     def define_optimizer(self, model, opt):
         if opt == 'Adagrad' or 'adagrad':
@@ -93,11 +88,10 @@ class Train_Config:
                             reg_config = self.reg_config, plot_curve=self.save_train_curve,
                             plot_gradient=self.save_gradients)
 
-        # discretise_weights(model)
         if self.save_train_curve:
             cwd = create_folder(root, 'train_curve', cd=False)
             fig1.savefig(rf"train_curve/{torch.amax(train_vec):.2f}.png")
-            print('saved plot curve')
+            print('saved train curve')
             plt.close()
         if self.save_gradients:
             cwd = create_folder(root, 'gradients', cd=False)

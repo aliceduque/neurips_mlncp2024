@@ -18,7 +18,6 @@ def plot_gradients(gradients, num_epochs):
         ax = fig.add_subplot(1, 3, idx + 1, projection='3d')
         for epoch in range(num_epochs):
             hist, edges = np.histogram(gradients[name][epoch], bins=bins)
-            # print('epoch ', epoch, edges)
             x = 0.5 * (edges[1:] + edges[:-1])
             y = np.ones_like(x) * epoch
             z = hist
@@ -55,27 +54,6 @@ def plot_loss_curve (num_epochs, training_losses, train_accuracies, validation_a
     plt.grid(True)
     return fig
 
-
-def scatter_traces(noise_variance, values, ylabel='', title='', xlabel='Noise variance',
-                ret = False):
-
-    colors = ['blue', 'green', 'red', 'orange']
-    labels = ['Additive Uncorrelated', 'Additive Correlated', 'Multiplicative Uncorrelated', 'Multiplicative Correlated']
-    fig,ax = plt.subplots()
-    values = values.detach().cpu().numpy()
-    for k in range(len(values)):
-        plt.scatter(noise_variance, values[k], color=colors[k], label=labels[k])
-
-    plt.xscale('log')
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    if ret:
-        return fig
-    else:
-        plt.show()
 
 def plot_traces_fill(noise_variance, values, ylabel='', title='', xlabel='Noise variance',
                 ret = False):
@@ -183,7 +161,6 @@ def weights_mean_std(model, title):
             variances = tensor.var(dim=dim).numpy()
             std_devs = np.sqrt(variances)
             sorted_indices = means.argsort()
-            print(len(sorted_indices))
             sorted_means = means[sorted_indices]
             sorted_std_devs = std_devs[sorted_indices]
             
@@ -205,7 +182,6 @@ def weights_mean_std(model, title):
         for i in range(num_layers):
             ax = axes[i]
             x_values = range(len(layer_means[i]))
-            print(x_values)
             ax.plot(x_values, layer_means[i], color=colors[i], label=f'Row Mean', linewidth=4)
             ax.fill_between(range(len(layer_means[i])),
                             layer_means[i] - layer_std_devs[i],
@@ -260,8 +236,6 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
     ax.legend()
     plt.grid(True)
     return fig
-
-
 
 
    

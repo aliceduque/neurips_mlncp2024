@@ -11,11 +11,7 @@ class Test_Config:
                  noise_range,
                  noise_points,
                  repetition,
-                 data_file,
                  calc_acc,
-                 calc_snr,
-                 calc_entropy,
-                 calc_gaussianity,
                  plot,
                  test_noises,
                  database,
@@ -23,9 +19,6 @@ class Test_Config:
                  ):
         
         self.calc_acc = calc_acc
-        self.calc_snr = calc_snr
-        self.calc_entropy = calc_entropy
-        self.calc_gaussianity = calc_gaussianity
         self.noise_points = noise_points
         self.repetition = repetition
         self.test_noises = test_noises
@@ -33,7 +26,6 @@ class Test_Config:
         self.noise_types = len(test_noises)
         self.plot = plot
         self.database = database
-        self.data_file = data_file
         self.device = device
 
         self.out = self.Out(self)
@@ -42,18 +34,7 @@ class Test_Config:
         def __init__ (self, t):
             if t.calc_acc:
                 self.accuracy = torch.zeros((t.repetition, t.noise_points, t.noise_types))
-            if t.calc_snr:
-                self.snr = torch.zeros((t.repetition, t.noise_points, t.noise_types))
-            if t.calc_entropy:
-                self.entropy = torch.zeros((t.repetition, t.noise_points, t.noise_types))
-            if t.calc_gaussianity:
-                self.gaussianity = torch.zeros((t.repetition, t.noise_points, t.noise_types))
-           
     
-    # def test_loader(self, device):
-    #     self.test_load = get_test_loader(database=self.database, root=self.data_file,
-    #                                                         reduced=False, device=device)
-
 
     def test(self, model, rep, noise_value, noise_type):
         if self.calc_acc:

@@ -41,9 +41,9 @@ def get_test_loader(database, root, device, reduced=False):
     test_loader = get_loader(test_tensor)
     return test_loader
 
-def get_dataset(database, root="C:/Users/220429111/Box/University/PhD/Codes/Python", train=True, transform=None,
+def get_dataset(database, root, train=True, transform=None,
                 download=True):
-    path = f"{root}/{database}/data"
+    path = f"{root}/data"
     if database == 'MNIST':
       return datasets.MNIST(root=path, train=train, transform=transform,
                             download=download)

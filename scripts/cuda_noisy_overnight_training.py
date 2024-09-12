@@ -25,7 +25,7 @@ test = Test_Config(
     calc_snr = True,
     calc_entropy = True,
     calc_gaussianity = True,
-    noise_train_types = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor', 'AllNoi', 'MulUnc_MulCor']
+    noise_train_types = ['AddUnc', 'AddCor', 'MulUnc', 'MulCor', 'AllNoi', 'MulUnc_MulCor'],
     noise_train_levels = [0.1, 0.5, 1.0, 5.0]
 )
 

@@ -86,3 +86,9 @@ def discretise_tensor(tensor):
         
     
     return discretised_tensor
+
+def extract_elements(input_list):
+    if input_list and isinstance(input_list[0], list):
+        return [item for sublist in input_list for item in sublist]
+    else:
+        return input_list
