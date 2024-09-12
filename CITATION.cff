@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "Neurips 2024 Machine Learning with New Compute Paradigms"
+authors:
+  - family-names: Duque
+    given-names: Alice
+    orcid:
+title: "Improving Analog Neural Network Robustness: A Noise-Agnostic Approach with Explainable Regularizations"
+version: 1.0.0
+url: https://github.com/aliceduque/neurips_mlncp2024
+identifiers:
+date-released: 2024-09-11
