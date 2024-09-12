@@ -1,5 +1,4 @@
 from ..base.dicts import create_net_dict
-from ..utils.utils import discretise_tensor
 from .nn_classes import *
 import torch.nn.init as init
 import torch.nn as nn
@@ -42,27 +41,6 @@ def assign_to_model(model, noise_vec):
     # model.noise.update_parameters(var = noise_vec)
     return model
 
-def reg_zero_sum(model):
-    total_sum = 0.0
-    
-    sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
-    sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
-    total_sum = sum_h2 + sum_out
-
-    
-    return total_sum
-
-def reg_zero_std(model):
-    total_sum = 0.0
-    # sum_h1 = torch.sum(torch.std(model.h1.weight,dim=1))
-    sum_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
-    sum_out = torch.sum(torch.std(model.out.weight,dim=1))
-    total_sum = sum_h2 + sum_out
-    # total_sum = sum_h2
-
-    
-    return total_sum
-
 class ActivationHook:
     def __init__(self, layer, hook_type='output'):
         self.activations = None
@@ -83,11 +61,6 @@ class ActivationHook:
 
     def close(self):
         self.hook.remove()
-
-# def add_hook(layer):
-#     hook = ActivationHook(layer)
-#     hooks.append(hook)
-#     print(hook.activations)
 
 def compute_penalty(hooks, type):
     total_penalty = 0.0
@@ -115,25 +88,11 @@ def regularization_term(activations, type):
     return penalty.abs().sum()
 
 def regularisation(model, type, hook=None, reg_config=[0,0,0]):
-    total_sum = 0.0
 
     if type == 'custom_sum':
         sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
         sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
         reg_factor = sum_h2 + 30*sum_out
-        
-       
-    elif type == 'custom_std':
-        std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
-        std_out = torch.sum(torch.std(model.out.weight,dim=1))
-        sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
-        sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
-        reg_factor = 1.2*std_h2 + 0.1*sum_h2 + 27*std_out + 0.3*sum_out
-
-    elif type == 'towards_saturation':
-        hooks = []
-        hooks.append(hook)        
-        reg_factor = compute_penalty(hooks)
         
     elif type =='addunc_sigm' or type =='addunc_phot_sigm':
         l2_factor_out = model.out.weight.pow(2).sum()
@@ -142,58 +101,6 @@ def regularisation(model, type, hook=None, reg_config=[0,0,0]):
         hooks = []
         hooks.append(hook)        
         reg_factor = reg_config[0]*compute_penalty(hooks, type) + reg_config[1]*l2_factor_h2 + reg_config[2]*l2_factor_out
-        
-        
-    elif type =='h2_saturation_out_l1':
-        l1_factor = model.out.weight.abs().sum()
-        hooks = []
-        hooks.append(hook)        
-        reg_factor = compute_penalty(hooks) + l1_factor
-        
-        
-    elif type == 'custom_std_row':
-        out = model.out.weight
-        row_diff = torch.zeros_like(out)
-        for i in range(len(out)):
-            if i == 0:
-                row_diff[0] = out[0] - out[len(out)-1]
-            else:
-                row_diff[i] = out[i] - out[i-1]
-        # std_out = torch.sum(torch.std(model.out.weight,dim=0))
-        # std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
-        row_diff_std = torch.std(row_diff, dim=1)
-        reg_factor = row_diff_std.sum()
-
-    elif type == 'l1' or type == 'L1':
-        reg_factor = 0.0
-        for name, param in model.named_parameters():
-            if 'weight' in name:
-                    reg_factor += param.abs().sum()
-        
-    elif type == 'l2' or type == 'L2':
-        reg_factor = 0.0
-        for name, param in model.named_parameters():
-            if 'weight' in name:
-                    reg_factor += param.pow(2).sum()
-
-    elif type == 'reg_relu':
-        sum_h1 = torch.sum((1/(model.h1.weight**2 + 1e-15)))
-        reg_factor = sum_h1
-        reg_factor = std_h2 + std_out
-        
-    elif type == 'custom_bias_out':
-        sum_h2 = torch.sum(torch.abs(torch.sum(model.h2.weight,dim=1)))
-        std_h2 = torch.sum(torch.std(model.h2.weight,dim=1))
-        sum_out = torch.sum(torch.abs(torch.sum(model.out.weight,dim=1)))
-        std_out = torch.sum(torch.std(model.out.weight,dim=1))
-        # bias_out = torch.sum((1/(model.out.bias**4 + 1e-15)))
-        reg_factor = sum_h2 + std_h2 + std_out + sum_out # + bias_out
-    
-    elif type == 'small_activations':
-        reg_factor=0.0
-        for name, param in model.named_parameters():
-            if 'weight' in name and 'out' not in name:
-                reg_factor += torch.sum(torch.clamp(param, min=0))
     
     elif type == None:
         reg_factor = 0    
@@ -203,14 +110,6 @@ def regularisation(model, type, hook=None, reg_config=[0,0,0]):
         reg_factor = 0        
     
     return reg_factor
-
-def discretise_weights (model):
-    for name, param in model.named_parameters():
-        if 'weight' in name:
-            if 'h1' in name:
-                continue
-            param.data = discretise_tensor(param.data)
-            
             
 class Photonic_derivative_function(autograd.Function):
     @staticmethod

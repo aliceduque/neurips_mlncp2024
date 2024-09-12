@@ -65,15 +65,15 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             total_loss.backward(retain_graph=True)
             
             
-            # for name, param in model.named_parameters():
-            #     # print(f'grad max {name} = {max(param.grad.flatten())}')
-            #     if torch.isnan(param.grad).any():
-            #         print(f"GRADIENT NaN detected in {name}")  
-            #     if 'weight' in name and param.grad is not None:
-            #         if name not in epoch_gradients:
-            #             epoch_gradients[name] = param.grad.clone().detach()
-            #         else:
-            #             epoch_gradients[name] += param.grad.clone().detach()
+            for name, param in model.named_parameters():
+                # print(f'grad max {name} = {max(param.grad.flatten())}')
+                if torch.isnan(param.grad).any():
+                    print(f"GRADIENT NaN detected in {name}")  
+                if 'weight' in name and param.grad is not None:
+                    if name not in epoch_gradients:
+                        epoch_gradients[name] = param.grad.clone().detach()
+                    else:
+                        epoch_gradients[name] += param.grad.clone().detach()
 
             
             # print(f'{i}, epoch {epoch}, max weight: {max(model.h1.weight.flatten())}')
@@ -91,11 +91,11 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
             reg_epoch_loss += lambda_reg * reg_factor
             epoch_loss += total_loss
             
-        # for name, grad in epoch_gradients.items():
-        #     if name not in gradients:
-        #         gradients[name] = []
-        #     avg_grad = grad / num_batches
-        #     gradients[name].append(avg_grad)
+        for name, grad in epoch_gradients.items():
+            if name not in gradients:
+                gradients[name] = []
+            avg_grad = grad / num_batches
+            gradients[name].append(avg_grad)
 
         avg_reg_loss = reg_epoch_loss / num_batches
         avg_training_loss = epoch_loss / num_batches
@@ -123,8 +123,6 @@ def train_network(model, train_loader, num_epochs, loss_function,optimizer,
     else:
         fig2= None
 
-    # print(gradients)
-    # print(gradients['out.weight'])
     return fig, fig2
 
 def save_grad(name):
@@ -151,7 +149,6 @@ def test_network(model, data_loader, simplex=False, epoch_info=""):
             images, expected_outputs = images.to(dev, non_blocking=True), expected_outputs.to(dev, non_blocking=True)
             outputs = model(images)
             expected_classes = expected_outputs.type(torch.int)
-            # get the predicted value from each output in the batch
             predicted_index = torch.argmax(outputs, dim=1).type(torch.int)
             predicted_outputs = get_actual_output(predicted_index)
             if simplex:
@@ -164,13 +161,9 @@ def test_network(model, data_loader, simplex=False, epoch_info=""):
         results_str = f"Test data results: {float(correct)/total}"
         if epoch_info:
             results_str += f", {epoch_info}"
-        #print(results_str)
-        # if simplex:
-        #   plt.show()
+
         print(float(correct)/total)
     return batch, 100*float(correct)/total, ax
-
-
 
 
 def create_loss_function(loss_function, output_size=OUTPUT_SIZE):
@@ -179,10 +172,6 @@ def create_loss_function(loss_function, output_size=OUTPUT_SIZE):
         return loss_function(outputs, targets)
     return calc_loss
 
-# def save_grad(name):
-#     def hook(grad):
-#         gradients[name].append(grad.clone().cpu().numpy())
-#     return hook
 
 def save_grad(name):
     def hook(grad):

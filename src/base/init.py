@@ -7,4 +7,3 @@ HIDDEN_NEURONS = 300
 BATCH_SIZE = 128
 selected_classes = SELECTED_CLASSES
 DIGITS = ''.join(str(num) for num in selected_classes)
-FILEPATH = rf"C:\\Users\\220429111\\Box\\University\\PhD\\Codes\\Python\\MNIST\\parameters\\parameters{DIGITS}relu.pth"

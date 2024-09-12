@@ -5,6 +5,7 @@ import pickle
 
 
 def create_folder(root,filepath_from_root, cd=False):
+    root = root.replace('\\', '/')
     filepath = os.path.join(root,filepath_from_root)
     if not os.path.exists(filepath):
       os.makedirs(filepath)
