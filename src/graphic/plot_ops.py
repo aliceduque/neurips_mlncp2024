@@ -187,8 +187,8 @@ def weights_mean_std(model, title):
                             layer_means[i] - layer_std_devs[i],
                             layer_means[i] + layer_std_devs[i],
                             color=colors[i], alpha=0.2)
-            # if bias is not None:
-            #     ax.bar(x_values, bias[i], color='gray', alpha=0.4, label=f'layer {i+1} Bias')
+            if bias is not None:
+                ax.bar(x_values, bias[i], color='gray', alpha=0.4, label=f'layer {i+1} Bias')
             ax.set_ylabel('Weight values', fontsize=20)
             ax.legend(fontsize=18)
             ax.grid(True)
@@ -227,7 +227,7 @@ def make_plot(activation, attribute, value, train_vec, noise_points, noise_range
     std = np.std(value, axis=0)
     for k in range(len(test_noises)):
         ax.plot(noise_vec, mean[:,k], color = colors[k], label = labels[k], linewidth=3)
-        ax.fill_between(noise_vec, mean[:,k] - std[:,k], mean[:,k] + std[:,k], color=colors[k], alpha=0.3)
+        ax.fill_between(noise_vec, mean[:,k] - 2*std[:,k], mean[:,k] + 2*std[:,k], color=colors[k], alpha=0.3)
 
     ax.set_xscale('log')
     ax.set_title(title)
