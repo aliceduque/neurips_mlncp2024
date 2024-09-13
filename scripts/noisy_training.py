@@ -33,7 +33,7 @@ def main():
         learning_rate = 5e-6, # If 'specific', learning rate is adapted to whichever activation function is in use, based on dictionary create_net_dict in dicts.py 
         num_epochs = 2,
         optimizer = 'adam',
-        regularisation = f'addunc_{activation_reg[0]}', # Regularisation type. For additive correlated, 'custom_sum', for uncorrelated, f'addunc_{activation_reg[0]}'
+        regularisation = f'addunc_{activation_reg[0]}', # Regularisation type. For additive correlated, 'custom_sum', for uncorrelated, f'addunc_{activation_reg[0]}' (only available for sigm and phot_sigm)
         lambda_reg = 6e-3, # General lambda for regularisation
         reg_config = [0.01, 0.015, 3.0], # Lambdas for Additive Uncorrelated regularisation: [saturation of h2, L2 regularisation of h2, L2 regularisation output layer]
         save_histogram = True,

@@ -1,3 +1,5 @@
 /notebooks
 /.idea
+outcomes/
+data/
 *.pyc 
